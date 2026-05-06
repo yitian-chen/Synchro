@@ -3,7 +3,7 @@ spring:
     name: synchro
 
   datasource:
-    url: jdbc:mysql://localhost:3306/synchro?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3307/synchro?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: synchro
     password: synchro_password
     driver-class-name: com.mysql.cj.jdbc.Driver
