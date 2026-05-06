@@ -33,6 +33,7 @@ public class OnboardingService {
     @Transactional
     public OnboardingResponse startOnboarding(Long userId) {
         log.info("[OnboardingService] startOnboarding - userId: {}", userId);
+        aiService.testConnection();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));

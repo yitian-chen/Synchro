@@ -56,8 +56,8 @@ minio:
 ai:
   openai:
     api-key: ${OPENAI_API_KEY}
-    model: ${OPENAI_API_MODEL:MiniMax-M2.7}
-    base-url: ${OPENAI_BASE_URL:https://api.minimaxi.com/v1}
+    model: ${OPENAI_API_MODEL:deepseek-v4-flash}
+    base-url: ${OPENAI_BASE_URL:https://api.deepseek.com/v1}
     embedding-model: ${OPENAI_EMBEDDING_MODEL:deepseek-v4-flash}
 
 # Matching Algorithm Weights (configurable per CLAUDE.md)
