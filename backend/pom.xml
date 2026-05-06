@@ -16,7 +16,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <langchain4j.version>1.0.0</langchain4j.version>
         <jjwt.version>0.12.5</jjwt.version>
     </properties>
 
@@ -84,25 +83,30 @@
         <!-- LangChain4j AI -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.version}</version>
+            <artifactId>langchain4j-core</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-redis</artifactId>
-            <version>${langchain4j.version}</version>
+            <version>1.0.0</version>
         </dependency>
 
-        <!-- Redis Vector Search -->
+        <!-- Redis Client -->
         <dependency>
-            <groupId>io.redis</groupId>
-            <artifactId>redis-stack-java</artifactId>
-            <version>0.12.0</version>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+
+        <!-- Resilience -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
         <!-- Utilities -->
