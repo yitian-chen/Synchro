@@ -1,0 +1,17 @@
+# Environment
+.env
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Build
+target/
+dist/
+node_modules/
