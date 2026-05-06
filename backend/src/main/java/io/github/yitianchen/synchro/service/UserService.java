@@ -45,13 +45,13 @@ public class UserService {
         if (request.getAge() != null) {
             profile.setAge(request.getAge());
         }
-        if (request.getGender() != null) {
-            profile.setGender(request.getGender());
+        if (request.getGender() != null && !request.getGender().isEmpty()) {
+            profile.setGender(Profile.Gender.valueOf(request.getGender()));
         }
         if (request.getLocation() != null) {
             profile.setLocation(request.getLocation());
         }
-        if (request.getPreferences() != null) {
+        if (request.getPreferences() != null && !request.getPreferences().isEmpty()) {
             profile.setPreferences(request.getPreferences());
         }
 

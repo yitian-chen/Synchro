@@ -1,6 +1,9 @@
 spring:
   application:
     name: synchro
+  jackson:
+    coercion:
+      empty-string-as-null: true
 
   datasource:
     url: jdbc:mysql://localhost:3307/synchro?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC

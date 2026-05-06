@@ -1,6 +1,5 @@
 package io.github.yitianchen.synchro.dto.request;
 
-import io.github.yitianchen.synchro.model.Profile;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -16,7 +15,7 @@ public class UpdateProfileRequest {
     @Max(value = 100, message = "Age must be less than 100")
     private Integer age;
 
-    private Profile.Gender gender;
+    private String gender;
 
     @Size(max = 255, message = "Location must be less than 255 characters")
     private String location;
