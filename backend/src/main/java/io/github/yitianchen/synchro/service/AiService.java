@@ -11,21 +11,10 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AiService {
 
     private final ChatModel chatModel;
-
-    public AiService(ChatModel chatModel) {
-        this.chatModel = chatModel;
-        log.info("===== AiService Initialized =====");
-        log.info("ChatModel class: {}", chatModel.getClass().getName());
-    }
-
-    public void testConnection() {
-        log.info("===== AI Connection Test =====");
-        log.info("ChatModel class: {}", chatModel.getClass().getName());
-        log.info("ChatModel toString: {}", chatModel.toString());
-    }
 
     private static final String ONBOARDING_SYSTEM_PROMPT = """
             You are Synchro, an AI dating assistant conducting a fun and engaging personality interview.

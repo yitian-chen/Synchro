@@ -1,0 +1,134 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { onboardingApi } from '../api/onboarding';
+import type { OnboardingMessage } from '../types';
+
+const OnboardingPage: React.FC = () => {
+  const [messages, setMessages] = useState<OnboardingMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    startOnboarding();
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const startOnboarding = async () => {
+    try {
+      const response = await onboardingApi.start();
+      setMessages(response.messages);
+      if (response.isComplete) {
+        setIsComplete(true);
+      }
+    } catch (err) {
+      console.error('Failed to start onboarding:', err);
+    }
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: OnboardingMessage = {
+      id: Date.now(),
+      senderType: 'USER',
+      content: input,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await onboardingApi.sendMessage(input);
+      setMessages(response.messages);
+      if (response.isComplete) {
+        setIsComplete(true);
+        setTimeout(() => navigate('/dashboard'), 2000);
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="gradient-bg p-4 text-white">
+        <h1 className="text-xl font-heading font-bold">AI性格访谈</h1>
+        <p className="text-sm opacity-80">和我们AI聊聊，让它了解你</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.senderType === 'USER' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                msg.senderType === 'USER'
+                  ? 'bg-primary text-white rounded-br-sm'
+                  : 'bg-white text-gray-800 rounded-bl-sm shadow'
+              }`}
+            >
+              <p>{msg.content}</p>
+              <span className="text-xs opacity-60 mt-1 block">
+                {new Date(msg.createdAt).toLocaleTimeString()}
+              </span>
+            </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-white px-4 py-2 rounded-2xl shadow">
+              <p className="text-gray-500">AI正在思考...</p>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {isComplete ? (
+        <div className="p-4 bg-white border-t">
+          <p className="text-center text-green-600 font-semibold">
+            访谈完成！正在跳转到首页...
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSend} className="p-4 bg-white border-t">
+          <div className="flex space-x-2 max-w-2xl mx-auto">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="输入你的回答..."
+              className="flex-1 px-4 py-2 border rounded-full focus:ring-2 focus:ring-primary focus:border-primary"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="btn-primary px-6 rounded-full"
+            >
+              发送
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+};
+
+export default OnboardingPage;

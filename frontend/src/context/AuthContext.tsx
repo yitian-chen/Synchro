@@ -1,0 +1,79 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authApi } from '../api/auth';
+import type { User, AuthResponse } from '../types';
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, nickname: string) => Promise<void>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+    const userStr = localStorage.getItem('user');
+    if (accessToken && userStr) {
+      setUser(JSON.parse(userStr));
+    }
+    setIsLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const response: AuthResponse = await authApi.login(email, password);
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('refreshToken', response.refreshToken);
+    localStorage.setItem('user', JSON.stringify(response.user));
+    setUser(response.user);
+  };
+
+  const register = async (email: string, password: string, nickname: string) => {
+    const response: AuthResponse = await authApi.register(email, password, nickname);
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('refreshToken', response.refreshToken);
+    localStorage.setItem('user', JSON.stringify(response.user));
+    setUser(response.user);
+  };
+
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // ignore error
+    }
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        register,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
