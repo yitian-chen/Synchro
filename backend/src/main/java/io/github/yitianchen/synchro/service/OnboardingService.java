@@ -1,0 +1,183 @@
+package io.github.yitianchen.synchro.service;
+
+import io.github.yitianchen.synchro.dto.request.OnboardingMessageRequest;
+import io.github.yitianchen.synchro.dto.response.OnboardingResponse;
+import io.github.yitianchen.synchro.model.Conversation;
+import io.github.yitianchen.synchro.model.Message;
+import io.github.yitianchen.synchro.model.User;
+import io.github.yitianchen.synchro.repository.ConversationRepository;
+import io.github.yitianchen.synchro.repository.MessageRepository;
+import io.github.yitianchen.synchro.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class OnboardingService {
+
+    private final UserRepository userRepository;
+    private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
+    private final AiService aiService;
+    private final TraitExtractionService traitExtractionService;
+
+    private static final int MAX_EXCHANGES_BEFORE_SUMMARY = 8;
+
+    @Transactional
+    public OnboardingResponse startOnboarding(Long userId) {
+        log.info("[OnboardingService] startOnboarding - userId: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.getStatus() != User.UserStatus.PENDING_ONBOARDING) {
+            throw new IllegalStateException("Onboarding already completed or not pending");
+        }
+
+        Conversation conversation = conversationRepository
+                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
+                .orElseGet(() -> {
+                    Conversation newConv = new Conversation();
+                    newConv.setUserId(userId);
+                    newConv.setConversationType(Conversation.ConversationType.ONBOARDING);
+                    newConv.setTitle("AI Onboarding Interview");
+                    return conversationRepository.save(newConv);
+                });
+
+        List<Message> existingMessages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+
+        if (existingMessages.isEmpty()) {
+            String welcomeMessage = aiService.chat("Hello", List.of());
+            Message aiMessage = new Message();
+            aiMessage.setConversationId(conversation.getId());
+            aiMessage.setSenderId(-1L);
+            aiMessage.setSenderType(Message.SenderType.AI);
+            aiMessage.setContent(welcomeMessage);
+            messageRepository.save(aiMessage);
+            existingMessages = List.of(aiMessage);
+        }
+
+        return buildOnboardingResponse(conversation, existingMessages);
+    }
+
+    @Transactional
+    public OnboardingResponse sendMessage(Long userId, OnboardingMessageRequest request) {
+        log.info("[OnboardingService] sendMessage - userId: {}, content: {}",
+                userId, sanitizeForDebug(request.getContent()));
+
+        Conversation conversation = conversationRepository
+                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalStateException("No active onboarding conversation. Please start onboarding first."));
+
+        Message userMessage = new Message();
+        userMessage.setConversationId(conversation.getId());
+        userMessage.setSenderId(userId);
+        userMessage.setSenderType(Message.SenderType.USER);
+        userMessage.setContent(request.getContent());
+        messageRepository.save(userMessage);
+
+        List<Message> history = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+        List<AiService.ChatMessageRecord> chatHistory = history.stream()
+                .map(m -> new AiService.ChatMessageRecord(
+                        m.getSenderType() == Message.SenderType.USER ? "user" : "assistant",
+                        m.getContent()))
+                .collect(Collectors.toList());
+
+        String aiResponse = aiService.chat(request.getContent(), chatHistory);
+
+        Message aiMessage = new Message();
+        aiMessage.setConversationId(conversation.getId());
+        aiMessage.setSenderId(-1L);
+        aiMessage.setSenderType(Message.SenderType.AI);
+        aiMessage.setContent(aiResponse);
+        messageRepository.save(aiMessage);
+
+        history.add(userMessage);
+        history.add(aiMessage);
+
+        boolean shouldComplete = history.size() / 2 >= MAX_EXCHANGES_BEFORE_SUMMARY;
+        if (shouldComplete) {
+            return completeOnboarding(userId, conversation, history);
+        }
+
+        return buildOnboardingResponse(conversation, history);
+    }
+
+    @Transactional
+    public OnboardingResponse completeOnboardingManually(Long userId) {
+        Conversation conversation = conversationRepository
+                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalStateException("No active onboarding conversation"));
+
+        List<Message> history = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+        return completeOnboarding(userId, conversation, history);
+    }
+
+    private OnboardingResponse completeOnboarding(Long userId, Conversation conversation, List<Message> history) {
+        log.info("[OnboardingService] completing onboarding for userId: {}", userId);
+
+        traitExtractionService.extractAndSaveTraits(userId, history);
+
+        conversation.setStatus(Conversation.ConversationStatus.COMPLETED);
+        conversationRepository.save(conversation);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setStatus(User.UserStatus.ACTIVE);
+        user.setOnboardingCompleted(true);
+        userRepository.save(user);
+
+        return buildOnboardingResponse(conversation, history);
+    }
+
+    public OnboardingResponse getOnboardingStatus(Long userId) {
+        Conversation conversation = conversationRepository
+                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
+                .orElse(null);
+
+        if (conversation == null) {
+            return OnboardingResponse.builder()
+                    .isComplete(false)
+                    .exchangeCount(0)
+                    .messages(List.of())
+                    .build();
+        }
+
+        List<Message> messages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+        return buildOnboardingResponse(conversation, messages);
+    }
+
+    private OnboardingResponse buildOnboardingResponse(Conversation conversation, List<Message> messages) {
+        return OnboardingResponse.builder()
+                .conversation(OnboardingResponse.ConversationResponse.builder()
+                        .id(conversation.getId())
+                        .type(conversation.getConversationType())
+                        .status(conversation.getStatus())
+                        .createdAt(conversation.getCreatedAt())
+                        .build())
+                .messages(messages.stream()
+                        .map(m -> OnboardingResponse.MessageResponse.builder()
+                                .id(m.getId())
+                                .senderType(m.getSenderType())
+                                .content(m.getContent())
+                                .createdAt(m.getCreatedAt())
+                                .build())
+                        .collect(Collectors.toList()))
+                .exchangeCount(messages.size() / 2)
+                .isComplete(conversation.getStatus() == Conversation.ConversationStatus.COMPLETED)
+                .build();
+    }
+
+    private String sanitizeForDebug(String text) {
+        if (text == null) return "null";
+        if (text.length() <= 50) return text;
+        return text.substring(0, 50) + "...";
+    }
+}

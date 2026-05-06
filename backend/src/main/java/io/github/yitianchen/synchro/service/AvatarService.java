@@ -38,13 +38,17 @@ public class AvatarService {
             boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
             if (!exists) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+                log.info("Created bucket: {}", bucket);
             }
         } catch (Exception e) {
             log.error("Failed to ensure bucket exists: {}", e.getMessage());
+            throw new RuntimeException("Failed to ensure bucket exists: " + bucket, e);
         }
     }
 
     public String uploadAvatar(MultipartFile file, Long userId) throws Exception {
+        ensureBucketExists();
+
         String extension = getFileExtension(file.getOriginalFilename());
         String objectName = "avatars/" + userId + "/" + UUID.randomUUID() + extension;
 
