@@ -25,8 +25,8 @@ const ChatPage: React.FC = () => {
     connectWebSocket();
 
     return () => {
-      if (stompClientRef.current) {
-        stompClientRef.current.disconnect(() => {});
+      if (stompClientRef.current && stompClientRef.current.connected) {
+        stompClientRef.current.disconnect();
       }
     };
   }, [conversationId]);

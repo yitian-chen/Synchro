@@ -113,14 +113,25 @@ const DashboardPage: React.FC = () => {
           <div className="card">
             <h3 className="font-semibold mb-2">你的特质</h3>
             <div className="flex flex-wrap gap-2">
-              {JSON.parse(profile.traitsSummary || '[]').map((trait: { name: string; value: number }) => (
-                <span
-                  key={trait.name}
-                  className="px-3 py-1 bg-accent rounded-full text-sm"
-                >
-                  {trait.name}: {Math.round(trait.value * 100)}%
-                </span>
-              ))}
+              {(() => {
+                try {
+                  const parsed = JSON.parse(profile.traitsSummary || '{}');
+                  const traits = parsed.traits || parsed;
+                  if (Array.isArray(traits)) {
+                    return traits.map((trait: any) => (
+                      <span
+                        key={typeof trait === 'string' ? trait : trait.name}
+                        className="px-3 py-1 bg-accent rounded-full text-sm"
+                      >
+                        {typeof trait === 'string' ? trait : `${trait.name}: ${Math.round((trait.value || 0) * 100)}%`}
+                      </span>
+                    ));
+                  }
+                  return null;
+                } catch {
+                  return null;
+                }
+              })()}
             </div>
           </div>
         )}
