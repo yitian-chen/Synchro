@@ -22,11 +22,15 @@ public class LangChain4jConfig {
     @Value("${ai.openai.api-key}")
     private String apiKey;
 
+    @Value("${ai.openai.base-url}")
+    private String baseUrl;
+
     @Bean
     public ChatModel chatModel() {
         return OpenAiChatModel.builder()
                 .apiKey(apiKey)
                 .modelName(chatModel)
+                .baseUrl(baseUrl)
                 .temperature(0.8)
                 .build();
     }
@@ -36,6 +40,7 @@ public class LangChain4jConfig {
         return OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey)
                 .modelName(chatModel)
+                .baseUrl(baseUrl)
                 .temperature(0.8)
                 .build();
     }
@@ -45,6 +50,7 @@ public class LangChain4jConfig {
         return OpenAiEmbeddingModel.builder()
                 .apiKey(apiKey)
                 .modelName(embeddingModel)
+                .baseUrl(baseUrl)
                 .build();
     }
 }

@@ -42,7 +42,7 @@ server:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:your-256-bit-secret-key-here-change-in-production}
-  access-token-expiration: 900000      # 15 minutes
+  access-token-expiration: 28800000   # 8 hours
   refresh-token-expiration: 604800000    # 7 days
 
 # MinIO Configuration
@@ -56,8 +56,9 @@ minio:
 ai:
   openai:
     api-key: ${OPENAI_API_KEY}
-    model: gpt-4o
-    embedding-model: text-embedding-3-small
+    model: ${OPENAI_API_MODEL:MiniMax-M2.7}
+    base-url: ${OPENAI_BASE_URL:https://api.minimaxi.com/v1}
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:deepseek-v4-flash}
 
 # Matching Algorithm Weights (configurable per CLAUDE.md)
 matching:
