@@ -125,6 +125,7 @@ public class OnboardingService {
         log.info("[OnboardingService] sendMessage - history size: {}", history.size());
 
         List<AiService.ChatMessageRecord> chatHistory = history.stream()
+                .limit(history.size() - 1) // 排除刚保存的用户消息，避免重复发送
                 .map(m -> new AiService.ChatMessageRecord(
                         m.getSenderType() == Message.SenderType.USER ? "user" : "assistant",
                         m.getContent()))
@@ -152,7 +153,7 @@ public class OnboardingService {
         history.add(userMessage);
         history.add(aiMessage);
 
-        boolean shouldComplete = history.size() / 2 >= MAX_EXCHANGES_BEFORE_SUMMARY;
+        boolean shouldComplete = history.size() / 2 > MAX_EXCHANGES_BEFORE_SUMMARY;
         if (shouldComplete) {
             return completeOnboarding(userId, conversation, history);
         }

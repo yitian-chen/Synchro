@@ -12,13 +12,17 @@ const OnboardingPage: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const hasStarted = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    startOnboarding();
+    if (!hasStarted.current) {
+      hasStarted.current = true;
+      startOnboarding();
+    }
   }, []);
 
   useEffect(() => {
@@ -45,15 +49,36 @@ const OnboardingPage: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
+    // 乐观地立即显示用户消息
+    const tempId = Date.now();
+    const optimisticMessage: OnboardingMessage = {
+      id: tempId,
+      senderType: 'USER',
+      content: savedInput,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMessage]);
+
     try {
       const response = await onboardingApi.sendMessage(savedInput);
-      setMessages(response.messages);
+      // 用服务端返回的列表替换，移除乐观消息后去重（以 senderType+content 为 key）
+      setMessages((prev) => {
+        const withoutOptimistic = prev.filter((m) => m.id !== tempId);
+        const existingKeys = new Set(withoutOptimistic.map((m) => `${m.senderType}:${m.content}`));
+        const newMsgs = response.messages.filter(
+          (m) => !existingKeys.has(`${m.senderType}:${m.content}`)
+        );
+        return [...withoutOptimistic, ...newMsgs];
+      });
       if (response.isComplete) {
         setIsComplete(true);
-        setTimeout(() => navigate('/dashboard'), 2000);
+        if (response.redirectUrl) {
+          setTimeout(() => navigate(response.redirectUrl!), 2000);
+        }
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInput(savedInput);
     } finally {
       setIsLoading(false);
