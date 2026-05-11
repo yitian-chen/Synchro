@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../api/user';
 import { matchApi } from '../api/match';
-import type { Profile, Match } from '../types';
+import type { Profile, Match, User } from '../types';
 
 const DashboardPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currentMatch, setCurrentMatch] = useState<Match | null>(null);
@@ -21,6 +21,17 @@ const DashboardPage: React.FC = () => {
     try {
       const data = await userApi.getProfile();
       setProfile(data);
+      // 同步用户状态到 AuthContext，避免 localStorage 数据与服务端不一致
+      const userFromServer: User = {
+        id: data.userId,
+        email: data.email,
+        nickname: data.nickname,
+        avatarUrl: data.avatarUrl,
+        status: data.status as any,
+        onboardingCompleted: data.onboardingCompleted,
+      };
+      setUser(userFromServer);
+      localStorage.setItem('user', JSON.stringify(userFromServer));
     } catch (err) {
       console.error('Failed to load profile:', err);
     }
@@ -153,8 +164,8 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Reset Onboarding */}
-        {user?.status === 'ACTIVE' && profile?.onboardingCompleted && (
+        {/* Reset Onboarding - 显示给所有未完成onboarding的用户 */}
+        {(user?.status === 'PENDING_ONBOARDING' || !user?.onboardingCompleted) && (
           <div className="card border-2 border-red-300">
             <h3 className="font-semibold mb-2 text-red-600">重新开始访谈</h3>
             <p className="text-sm text-gray-500 mb-4">

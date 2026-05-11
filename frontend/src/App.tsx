@@ -61,10 +61,10 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/"
         element={
-          user?.onboardingCompleted ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
+          user?.status === 'PENDING_ONBOARDING' || !user?.onboardingCompleted ? (
             <Navigate to="/onboarding" replace />
+          ) : (
+            <Navigate to="/dashboard" replace />
           )
         }
       />
