@@ -48,6 +48,14 @@ public class OnboardingService {
                     if (user.getStatus() != User.UserStatus.PENDING_ONBOARDING) {
                         throw new IllegalStateException("Onboarding not available. Please contact support.");
                     }
+                    // 先把该用户之前的非ACTIVE状态的onboarding对话都标记为ARCHIVED
+                    conversationRepository.findByUserIdAndConversationType(userId, Conversation.ConversationType.ONBOARDING)
+                            .forEach(conv -> {
+                                if (conv.getStatus() != Conversation.ConversationStatus.ACTIVE) {
+                                    conv.setStatus(Conversation.ConversationStatus.ARCHIVED);
+                                    conversationRepository.save(conv);
+                                }
+                            });
                     Conversation newConv = new Conversation();
                     newConv.setUserId(userId);
                     newConv.setConversationType(Conversation.ConversationType.ONBOARDING);
@@ -82,9 +90,27 @@ public class OnboardingService {
         log.info("[OnboardingService] sendMessage - userId: {}, content: {}",
                 userId, sanitizeForDebug(request.getContent()));
 
-        Conversation conversation = conversationRepository
-                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalStateException("No active onboarding conversation. Please start onboarding first."));
+        log.info("[OnboardingService] sendMessage - looking for ACTIVE onboarding conversation...");
+        List<Conversation> conversations = conversationRepository.findByUserIdAndConversationType(userId, Conversation.ConversationType.ONBOARDING);
+        Conversation conversation = conversations.stream()
+                .filter(c -> c.getStatus() == Conversation.ConversationStatus.ACTIVE)
+                .findFirst()
+                .orElse(null);
+
+        if (conversation == null) {
+            log.error("[OnboardingService] sendMessage - no ACTIVE conversation found for userId: {}", userId);
+            throw new IllegalStateException("No active onboarding conversation. Please start onboarding first.");
+        }
+
+        // 清理同一用户的其他非ACTIVE状态的onboarding对话，避免累积
+        conversations.stream()
+                .filter(c -> c.getId() != conversation.getId() && c.getStatus() != Conversation.ConversationStatus.ARCHIVED)
+                .forEach(c -> {
+                    c.setStatus(Conversation.ConversationStatus.ARCHIVED);
+                    conversationRepository.save(c);
+                });
+
+        log.info("[OnboardingService] sendMessage - found conversation id: {}, status: {}", conversation.getId(), conversation.getStatus());
 
         Message userMessage = new Message();
         userMessage.setConversationId(conversation.getId());
@@ -92,20 +118,27 @@ public class OnboardingService {
         userMessage.setSenderType(Message.SenderType.USER);
         userMessage.setContent(request.getContent());
         messageRepository.save(userMessage);
+        log.info("[OnboardingService] sendMessage - user message saved, id: {}", userMessage.getId());
 
         List<Message> history = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+        log.info("[OnboardingService] sendMessage - history size: {}", history.size());
+
         List<AiService.ChatMessageRecord> chatHistory = history.stream()
                 .map(m -> new AiService.ChatMessageRecord(
                         m.getSenderType() == Message.SenderType.USER ? "user" : "assistant",
                         m.getContent()))
                 .collect(Collectors.toList());
+        log.info("[OnboardingService] sendMessage - chatHistory size: {}", chatHistory.size());
 
+        log.info("[OnboardingService] sendMessage - calling aiService.chat...");
         String aiResponse;
         try {
             aiResponse = aiService.chat(request.getContent(), chatHistory);
-        } catch (Exception e) {
-            log.error("[OnboardingService] AI chat failed: {}", e.getMessage());
-            throw new IllegalStateException("AI service unavailable, please try again later: " + e.getMessage());
+            log.info("[OnboardingService] sendMessage - aiResponse received, length: {}", aiResponse != null ? aiResponse.length() : "null");
+        } catch (Throwable t) {
+            log.error("[OnboardingService] AI chat failed: {}, type: {}, stack: {}",
+                t.getMessage(), t.getClass().getName(), getStackTrace(t));
+            throw new IllegalStateException("AI service unavailable, please try again later: " + t.getMessage());
         }
 
         Message aiMessage = new Message();
@@ -201,6 +234,13 @@ public class OnboardingService {
                     conversationRepository.save(conv);
                 });
 
+        conversationRepository
+                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
+                .ifPresent(conv -> {
+                    conv.setStatus(Conversation.ConversationStatus.ARCHIVED);
+                    conversationRepository.save(conv);
+                });
+
         log.info("[OnboardingService] resetOnboarding completed for userId: {}", userId);
     }
 
@@ -229,5 +269,12 @@ public class OnboardingService {
         if (text == null) return "null";
         if (text.length() <= 50) return text;
         return text.substring(0, 50) + "...";
+    }
+
+    private String getStackTrace(Throwable t) {
+        java.io.StringWriter sw = new java.io.StringWriter();
+        t.printStackTrace(new java.io.PrintWriter(sw));
+        String stack = sw.toString();
+        return stack.length() > 500 ? stack.substring(0, 500) : stack;
     }
 }

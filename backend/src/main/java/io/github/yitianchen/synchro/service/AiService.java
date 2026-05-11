@@ -34,7 +34,11 @@ public class AiService {
 
     @Retry(name = "ai")
     public String chat(String userMessage, List<ChatMessageRecord> history) {
-        log.debug("[AiService] chat - userMessage: {}", sanitizeForDebug(userMessage));
+        log.info("[AiService] chat - START, userMessage: {}", sanitizeForDebug(userMessage));
+        log.info("[AiService] chat - history size: {}", history.size());
+        for (int i = 0; i < history.size(); i++) {
+            log.info("[AiService] chat - history[{}]: role={}, content={}", i, history.get(i).role(), sanitizeForDebug(history.get(i).content()));
+        }
 
         StringBuilder fullPrompt = new StringBuilder(ONBOARDING_SYSTEM_PROMPT).append("\n\n");
         for (ChatMessageRecord msg : history) {
@@ -42,8 +46,10 @@ public class AiService {
         }
         fullPrompt.append("user: ").append(userMessage).append("\nassistant:");
 
+        log.info("[AiService] chat - calling chatModel.chat...");
         var response = chatModel.chat(List.of(UserMessage.from(fullPrompt.toString())));
         String responseText = response.aiMessage().text();
+        log.info("[AiService] chat - response received, length: {}", responseText != null ? responseText.length() : "null");
         log.debug("[AiService] chat - response: {}", sanitizeForDebug(responseText));
 
         return responseText;

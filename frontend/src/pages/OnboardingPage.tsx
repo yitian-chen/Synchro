@@ -41,18 +41,12 @@ const OnboardingPage: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: OnboardingMessage = {
-      id: Date.now(),
-      senderType: 'USER',
-      content: input,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
+    const savedInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const response = await onboardingApi.sendMessage(input);
+      const response = await onboardingApi.sendMessage(savedInput);
       setMessages(response.messages);
       if (response.isComplete) {
         setIsComplete(true);
@@ -60,6 +54,7 @@ const OnboardingPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      setInput(savedInput);
     } finally {
       setIsLoading(false);
     }
