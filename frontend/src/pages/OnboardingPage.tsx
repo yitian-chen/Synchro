@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { onboardingApi } from '../api/onboarding';
 import type { OnboardingMessage } from '../types';
 
 const OnboardingPage: React.FC = () => {
+  const { logout } = useAuth();
   const [messages, setMessages] = useState<OnboardingMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -65,9 +67,17 @@ const OnboardingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="gradient-bg p-4 text-white">
-        <h1 className="text-xl font-heading font-bold">AI性格访谈</h1>
-        <p className="text-sm opacity-80">和我们AI聊聊，让它了解你</p>
+      <div className="gradient-bg p-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-heading font-bold">AI性格访谈</h1>
+          <p className="text-sm opacity-80">和我们AI聊聊，让它了解你</p>
+        </div>
+        <button
+          onClick={logout}
+          className="text-white text-sm hover:underline"
+        >
+          退出
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
