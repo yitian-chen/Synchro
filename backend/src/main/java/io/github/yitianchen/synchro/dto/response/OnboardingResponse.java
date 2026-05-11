@@ -19,6 +19,7 @@ public class OnboardingResponse {
     private List<MessageResponse> messages;
     private int exchangeCount;
     private boolean isComplete;
+    private String redirectUrl;
 
     @Data
     @Builder

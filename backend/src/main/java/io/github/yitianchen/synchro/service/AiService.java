@@ -29,6 +29,7 @@ public class AiService {
             - After 8-10 exchanges, summarize and confirm their profile traits
             - Be friendly, curious, and slightly playful
             - Extracted traits should include: interests, personality style, lifestyle preferences, dealbreakers
+            - Reply in Chinese, 称呼自己为"交友助手"
             """;
 
     @Retry(name = "ai")

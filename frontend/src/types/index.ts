@@ -47,6 +47,7 @@ export interface OnboardingResponse {
   messages: OnboardingMessage[];
   exchangeCount: number;
   isComplete: boolean;
+  redirectUrl?: string;
 }
 
 export interface Match {

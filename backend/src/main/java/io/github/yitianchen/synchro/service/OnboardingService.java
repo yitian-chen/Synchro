@@ -42,13 +42,12 @@ public class OnboardingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (user.getStatus() != User.UserStatus.PENDING_ONBOARDING) {
-            throw new IllegalStateException("Onboarding already completed or not pending");
-        }
-
         Conversation conversation = conversationRepository
                 .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
                 .orElseGet(() -> {
+                    if (user.getStatus() != User.UserStatus.PENDING_ONBOARDING) {
+                        throw new IllegalStateException("Onboarding not available. Please contact support.");
+                    }
                     Conversation newConv = new Conversation();
                     newConv.setUserId(userId);
                     newConv.setConversationType(Conversation.ConversationType.ONBOARDING);
@@ -151,7 +150,9 @@ public class OnboardingService {
         user.setOnboardingCompleted(true);
         userRepository.save(user);
 
-        return buildOnboardingResponse(conversation, history);
+        OnboardingResponse response = buildOnboardingResponse(conversation, history);
+        response.setRedirectUrl("/dashboard");
+        return response;
     }
 
     public OnboardingResponse getOnboardingStatus(Long userId) {

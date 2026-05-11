@@ -7,11 +7,10 @@ import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode; requireOnboarding?: boolean }> = ({
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
-  requireOnboarding = false,
 }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -23,10 +22,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requireOnboarding?: 
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
-  }
-
-  if (requireOnboarding && user?.onboardingCompleted) {
-    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -42,7 +37,7 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/onboarding"
         element={
-          <ProtectedRoute requireOnboarding>
+          <ProtectedRoute>
             <OnboardingPage />
           </ProtectedRoute>
         }
