@@ -26,7 +26,7 @@ const ChatPage: React.FC = () => {
 
     return () => {
       if (stompClientRef.current && stompClientRef.current.connected) {
-        stompClientRef.current.disconnect();
+        stompClientRef.current.disconnect(() => {});
       }
     };
   }, [conversationId]);

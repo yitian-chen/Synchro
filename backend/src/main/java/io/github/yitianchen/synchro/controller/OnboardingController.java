@@ -39,4 +39,10 @@ public class OnboardingController {
     public ResponseEntity<OnboardingResponse> completeManually(@AuthenticationPrincipal Long userId) {
         return ResponseEntity.ok(onboardingService.completeOnboardingManually(userId));
     }
+
+    @PostMapping("/reset")
+    public ResponseEntity<Void> resetOnboarding(@AuthenticationPrincipal Long userId) {
+        onboardingService.resetOnboarding(userId);
+        return ResponseEntity.ok().build();
+    }
 }

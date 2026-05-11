@@ -10,6 +10,7 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currentMatch, setCurrentMatch] = useState<Match | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -41,6 +42,22 @@ const DashboardPage: React.FC = () => {
       navigate(`/chat/${conversationId}`);
     } catch (err) {
       console.error('Failed to create conversation:', err);
+    }
+  };
+
+  const handleResetOnboarding = async () => {
+    if (!window.confirm('确定要重新开始AI访谈吗？这将清除你的性格特质摘要。')) {
+      return;
+    }
+    try {
+      setIsResetting(true);
+      await userApi.resetOnboarding();
+      navigate('/onboarding');
+    } catch (err) {
+      console.error('Failed to reset onboarding:', err);
+      alert('重置失败，请稍后重试');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -133,6 +150,23 @@ const DashboardPage: React.FC = () => {
                 }
               })()}
             </div>
+          </div>
+        )}
+
+        {/* Reset Onboarding */}
+        {user?.status === 'ACTIVE' && profile?.onboardingCompleted && (
+          <div className="card border-2 border-red-300">
+            <h3 className="font-semibold mb-2 text-red-600">重新开始访谈</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              重置将清除你的性格特质摘要，你可以重新开始AI访谈流程。
+            </p>
+            <button
+              onClick={handleResetOnboarding}
+              disabled={isResetting}
+              className="btn-secondary w-full bg-red-50 hover:bg-red-100 text-red-600 disabled:opacity-50"
+            >
+              {isResetting ? '重置中...' : '重新开始AI访谈'}
+            </button>
           </div>
         )}
       </main>

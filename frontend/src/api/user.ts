@@ -20,4 +20,8 @@ export const userApi = {
     });
     return response.data;
   },
+
+  resetOnboarding: async (): Promise<void> => {
+    await api.post('/onboarding/reset');
+  },
 };

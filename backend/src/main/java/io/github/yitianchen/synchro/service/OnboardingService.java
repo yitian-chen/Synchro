@@ -4,10 +4,13 @@ import io.github.yitianchen.synchro.dto.request.OnboardingMessageRequest;
 import io.github.yitianchen.synchro.dto.response.OnboardingResponse;
 import io.github.yitianchen.synchro.model.Conversation;
 import io.github.yitianchen.synchro.model.Message;
+import io.github.yitianchen.synchro.model.Profile;
 import io.github.yitianchen.synchro.model.User;
 import io.github.yitianchen.synchro.repository.ConversationRepository;
 import io.github.yitianchen.synchro.repository.MessageRepository;
+import io.github.yitianchen.synchro.repository.ProfileRepository;
 import io.github.yitianchen.synchro.repository.UserRepository;
+import io.github.yitianchen.synchro.repository.UserTraitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,8 @@ public class OnboardingService {
     private final UserRepository userRepository;
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
+    private final ProfileRepository profileRepository;
+    private final UserTraitRepository userTraitRepository;
     private final AiService aiService;
     private final TraitExtractionService traitExtractionService;
 
@@ -54,7 +59,13 @@ public class OnboardingService {
         List<Message> existingMessages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
 
         if (existingMessages.isEmpty()) {
-            String welcomeMessage = aiService.chat("Hello", List.of());
+            String welcomeMessage;
+            try {
+                welcomeMessage = aiService.chat("Hello", List.of());
+            } catch (Exception e) {
+                log.error("[OnboardingService] AI chat failed to generate welcome: {}", e.getMessage());
+                welcomeMessage = "Hey there! I'm Synchro — your personal dating profile assistant. Let's get to know each other!";
+            }
             Message aiMessage = new Message();
             aiMessage.setConversationId(conversation.getId());
             aiMessage.setSenderId(-1L);
@@ -90,7 +101,13 @@ public class OnboardingService {
                         m.getContent()))
                 .collect(Collectors.toList());
 
-        String aiResponse = aiService.chat(request.getContent(), chatHistory);
+        String aiResponse;
+        try {
+            aiResponse = aiService.chat(request.getContent(), chatHistory);
+        } catch (Exception e) {
+            log.error("[OnboardingService] AI chat failed: {}", e.getMessage());
+            throw new IllegalStateException("AI service unavailable, please try again later: " + e.getMessage());
+        }
 
         Message aiMessage = new Message();
         aiMessage.setConversationId(conversation.getId());
@@ -152,6 +169,38 @@ public class OnboardingService {
 
         List<Message> messages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
         return buildOnboardingResponse(conversation, messages);
+    }
+
+    @Transactional
+    public void resetOnboarding(Long userId) {
+        log.info("[OnboardingService] resetOnboarding - userId: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            throw new IllegalStateException("Onboarding is not completed, cannot reset");
+        }
+
+        user.setStatus(User.UserStatus.PENDING_ONBOARDING);
+        user.setOnboardingCompleted(false);
+        userRepository.save(user);
+
+        Profile profile = profileRepository.findByUserId(userId).orElse(null);
+        if (profile != null) {
+            userTraitRepository.deleteByProfileId(profile.getId());
+            profile.setTraitsSummary(null);
+            profileRepository.save(profile);
+        }
+
+        conversationRepository
+                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.COMPLETED)
+                .ifPresent(conv -> {
+                    conv.setStatus(Conversation.ConversationStatus.ARCHIVED);
+                    conversationRepository.save(conv);
+                });
+
+        log.info("[OnboardingService] resetOnboarding completed for userId: {}", userId);
     }
 
     private OnboardingResponse buildOnboardingResponse(Conversation conversation, List<Message> messages) {

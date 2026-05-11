@@ -35,11 +35,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response: AuthResponse = await authApi.login(email, password);
-    localStorage.setItem('accessToken', response.accessToken);
-    localStorage.setItem('refreshToken', response.refreshToken);
-    localStorage.setItem('user', JSON.stringify(response.user));
-    setUser(response.user);
+    try {
+      const response: AuthResponse = await authApi.login(email, password);
+      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      setUser(response.user);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        throw new Error(axiosErr.response?.data?.message || 'Login failed');
+      }
+      throw new Error('Login failed');
+    }
   };
 
   const register = async (email: string, password: string, nickname: string) => {
