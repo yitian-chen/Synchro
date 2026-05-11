@@ -42,19 +42,20 @@ public class OnboardingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Conversation conversation = conversationRepository
-                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
+        List<Conversation> conversations = conversationRepository.findByUserIdAndConversationType(userId, Conversation.ConversationType.ONBOARDING);
+        Conversation conversation = conversations.stream()
+                .filter(c -> c.getStatus() == Conversation.ConversationStatus.ACTIVE)
+                .findFirst()
                 .orElseGet(() -> {
                     if (user.getStatus() != User.UserStatus.PENDING_ONBOARDING) {
                         throw new IllegalStateException("Onboarding not available. Please contact support.");
                     }
-                    // 先把该用户之前的非ACTIVE状态的onboarding对话都标记为ARCHIVED
-                    conversationRepository.findByUserIdAndConversationType(userId, Conversation.ConversationType.ONBOARDING)
+                    // 清理该用户所有非ACTIVE状态的onboarding对话
+                    conversations.stream()
+                            .filter(c -> c.getStatus() != Conversation.ConversationStatus.ACTIVE)
                             .forEach(conv -> {
-                                if (conv.getStatus() != Conversation.ConversationStatus.ACTIVE) {
-                                    conv.setStatus(Conversation.ConversationStatus.ARCHIVED);
-                                    conversationRepository.save(conv);
-                                }
+                                conv.setStatus(Conversation.ConversationStatus.ARCHIVED);
+                                conversationRepository.save(conv);
                             });
                     Conversation newConv = new Conversation();
                     newConv.setUserId(userId);
@@ -189,8 +190,10 @@ public class OnboardingService {
     }
 
     public OnboardingResponse getOnboardingStatus(Long userId) {
-        Conversation conversation = conversationRepository
-                .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
+        List<Conversation> conversations = conversationRepository.findByUserIdAndConversationType(userId, Conversation.ConversationType.ONBOARDING);
+        Conversation conversation = conversations.stream()
+                .filter(c -> c.getStatus() == Conversation.ConversationStatus.ACTIVE)
+                .findFirst()
                 .orElse(null);
 
         if (conversation == null) {
