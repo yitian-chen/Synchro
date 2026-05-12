@@ -29,6 +29,7 @@ const DashboardPage: React.FC = () => {
         avatarUrl: data.avatarUrl,
         status: data.status as any,
         onboardingCompleted: data.onboardingCompleted,
+        matchingOptIn: data.matchingOptIn,
       };
       setUser(userFromServer);
       localStorage.setItem('user', JSON.stringify(userFromServer));
@@ -72,6 +73,21 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleMatchingOptInToggle = async () => {
+    const newOptIn = !profile?.matchingOptIn;
+    try {
+      await userApi.setMatchingOptIn(newOptIn);
+      setProfile((prev) => (prev ? { ...prev, matchingOptIn: newOptIn } : null));
+      if (user) {
+        const updatedUser = { ...user, matchingOptIn: newOptIn };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } catch (err) {
+      console.error('Failed to update matching opt-in:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="gradient-bg p-4">
@@ -101,6 +117,30 @@ const DashboardPage: React.FC = () => {
               <p className="text-sm text-gray-500">{profile?.bio || '还没有自我介绍'}</p>
             </div>
           </div>
+        </div>
+
+        {/* Matching Opt-In */}
+        <div className="card flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">参与匹配</h3>
+            <p className="text-sm text-gray-500">
+              {profile?.matchingOptIn !== false
+                ? '你已加入下一轮匹配，每周五自动配对'
+                : '已退出匹配，开启后可参与下周五的配对'}
+            </p>
+          </div>
+          <button
+            onClick={handleMatchingOptInToggle}
+            className={`relative w-12 h-6 rounded-full transition-colors ${
+              profile?.matchingOptIn !== false ? 'bg-primary' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                profile?.matchingOptIn !== false ? 'translate-x-6' : 'translate-x-0'
+              }`}
+            />
+          </button>
         </div>
 
         {/* Current Match Card */}

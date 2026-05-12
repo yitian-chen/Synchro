@@ -54,6 +54,7 @@ public class MatchingService {
         List<User> eligibleUsers = userRepository.findAll().stream()
                 .filter(u -> u.getStatus() == User.UserStatus.ACTIVE)
                 .filter(u -> u.isOnboardingCompleted())
+                .filter(User::isMatchingOptIn)
                 .filter(u -> !matchRepository.existsByUser1IdOrUser2IdAndMatchWeek(u.getId(), u.getId(), thisFriday))
                 .collect(Collectors.toList());
 

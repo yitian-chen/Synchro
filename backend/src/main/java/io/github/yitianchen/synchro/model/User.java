@@ -36,6 +36,9 @@ public class User {
     @Column(name = "onboarding_completed")
     private boolean onboardingCompleted = false;
 
+    @Column(name = "matching_opt_in")
+    private boolean matchingOptIn = true;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

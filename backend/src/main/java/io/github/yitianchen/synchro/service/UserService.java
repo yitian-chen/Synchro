@@ -71,6 +71,14 @@ public class UserService {
         return avatarUrl;
     }
 
+    @Transactional
+    public void setMatchingOptIn(Long userId, boolean optIn) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setMatchingOptIn(optIn);
+        userRepository.save(user);
+    }
+
     private UserProfileResponse buildUserProfileResponse(User user, Profile profile) {
         return UserProfileResponse.builder()
                 .userId(user.getId())
@@ -79,6 +87,7 @@ public class UserService {
                 .avatarUrl(user.getAvatarUrl())
                 .status(user.getStatus())
                 .onboardingCompleted(user.isOnboardingCompleted())
+                .matchingOptIn(user.isMatchingOptIn())
                 .bio(profile.getBio())
                 .age(profile.getAge())
                 .gender(profile.getGender())

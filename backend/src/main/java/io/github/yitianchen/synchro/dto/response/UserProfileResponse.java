@@ -19,6 +19,7 @@ public class UserProfileResponse {
     private String avatarUrl;
     private User.UserStatus status;
     private boolean onboardingCompleted;
+    private boolean matchingOptIn;
 
     // Profile fields
     private String bio;

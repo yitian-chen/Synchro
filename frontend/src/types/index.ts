@@ -5,6 +5,7 @@ export interface User {
   avatarUrl?: string;
   status: 'PENDING_ONBOARDING' | 'ACTIVE' | 'SUSPENDED';
   onboardingCompleted: boolean;
+  matchingOptIn: boolean;
 }
 
 export interface AuthResponse {
@@ -21,6 +22,7 @@ export interface Profile {
   avatarUrl?: string;
   status: string;
   onboardingCompleted: boolean;
+  matchingOptIn: boolean;
   bio?: string;
   age?: number;
   gender?: 'MALE' | 'FEMALE' | 'OTHER';

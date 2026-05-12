@@ -40,4 +40,12 @@ public class UserController {
         userService.updateAvatar(userId, avatarUrl);
         return ResponseEntity.ok(Map.of("avatarUrl", avatarUrl));
     }
+
+    @PutMapping("/me/matching-opt-in")
+    public ResponseEntity<Void> setMatchingOptIn(
+            @AuthenticationPrincipal Long userId,
+            @RequestBody Map<String, Boolean> body) {
+        userService.setMatchingOptIn(userId, body.getOrDefault("optIn", false));
+        return ResponseEntity.ok().build();
+    }
 }

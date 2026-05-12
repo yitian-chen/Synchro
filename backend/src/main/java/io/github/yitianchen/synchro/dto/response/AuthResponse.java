@@ -26,5 +26,7 @@ public class AuthResponse {
         private String nickname;
         private String avatarUrl;
         private User.UserStatus status;
+        private boolean onboardingCompleted;
+        private boolean matchingOptIn;
     }
 }

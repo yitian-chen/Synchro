@@ -24,4 +24,8 @@ export const userApi = {
   resetOnboarding: async (): Promise<void> => {
     await api.post('/onboarding/reset');
   },
+
+  setMatchingOptIn: async (optIn: boolean): Promise<void> => {
+    await api.put('/users/me/matching-opt-in', { optIn });
+  },
 };

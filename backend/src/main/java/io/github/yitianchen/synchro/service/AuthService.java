@@ -108,6 +108,8 @@ public class AuthService {
                         .nickname(user.getNickname())
                         .avatarUrl(user.getAvatarUrl())
                         .status(user.getStatus())
+                        .onboardingCompleted(user.isOnboardingCompleted())
+                        .matchingOptIn(user.isMatchingOptIn())
                         .build())
                 .build();
     }
