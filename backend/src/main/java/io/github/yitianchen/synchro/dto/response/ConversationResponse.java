@@ -25,6 +25,7 @@ public class ConversationResponse {
     private String title;
     private Conversation.ConversationStatus status;
     private MessageResponse lastMessage;
+    private int unreadCount;
     private LocalDateTime createdAt;
 
     @Data

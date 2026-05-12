@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
     List<Conversation> findByUserId(Long userId);
+    List<Conversation> findByParticipantId(Long participantId);
     List<Conversation> findByUserIdAndConversationType(Long userId, Conversation.ConversationType type);
     Optional<Conversation> findByUserIdAndConversationTypeAndStatus(Long userId, Conversation.ConversationType type, Conversation.ConversationStatus status);
     Optional<Conversation> findByMatchId(Long matchId);

@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
+import ChatListPage from './pages/ChatListPage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import EditProfilePage from './pages/EditProfilePage';
 
@@ -65,6 +66,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatListPage />
           </ProtectedRoute>
         }
       />

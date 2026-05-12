@@ -13,7 +13,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -73,8 +75,51 @@ public class ChatService {
                 .toList();
     }
 
+    /**
+     * 获取用户参与的所有对话（作为所有者或参与者）
+     */
     public List<Conversation> getUserConversations(Long userId) {
-        return conversationRepository.findByUserId(userId);
+        // 合并用户作为 owner 和 participant 的所有对话，去重
+        Set<Long> seenIds = new HashSet<>();
+        List<Conversation> allConversations = new ArrayList<>();
+
+        Stream.concat(
+                conversationRepository.findByUserId(userId).stream(),
+                conversationRepository.findByParticipantId(userId).stream()
+        ).forEach(conv -> {
+            if (seenIds.add(conv.getId())) {
+                allConversations.add(conv);
+            }
+        });
+
+        // 按 updatedAt/createdAt 降序排列
+        allConversations.sort((a, b) -> {
+            if (a.getUpdatedAt() != null && b.getUpdatedAt() != null) {
+                return b.getUpdatedAt().compareTo(a.getUpdatedAt());
+            }
+            return b.getCreatedAt().compareTo(a.getCreatedAt());
+        });
+
+        return allConversations;
+    }
+
+    /**
+     * 获取用户在指定对话中的未读消息数
+     */
+    public int getUnreadCount(Long conversationId, Long userId) {
+        return messageRepository.countByConversationIdAndSenderIdNotAndReadFalse(conversationId, userId);
+    }
+
+    /**
+     * 标记对话中所有非用户发送的消息为已读
+     */
+    @Transactional
+    public void markConversationAsRead(Long conversationId, Long userId) {
+        int updated = messageRepository.markAsReadByConversation(conversationId, userId);
+        if (updated > 0) {
+            log.info("[ChatService] Marked {} messages as read in conversation {} for user {}",
+                    updated, conversationId, userId);
+        }
     }
 
     @Transactional

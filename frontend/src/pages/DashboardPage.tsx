@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../api/user';
 import { matchApi } from '../api/match';
+import { chatApi } from '../api/chat';
 import type { Profile, Match, User } from '../types';
 
 const DashboardPage: React.FC = () => {
@@ -12,10 +13,12 @@ const DashboardPage: React.FC = () => {
   const [currentMatch, setCurrentMatch] = useState<Match | null>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [totalUnread, setTotalUnread] = useState(0);
 
   useEffect(() => {
     loadProfile();
     loadMatch();
+    loadUnreadCount();
   }, []);
 
   const loadProfile = async () => {
@@ -45,6 +48,18 @@ const DashboardPage: React.FC = () => {
       setCurrentMatch(match);
     } catch (err) {
       console.error('Failed to load match:', err);
+    }
+  };
+
+  const loadUnreadCount = async () => {
+    try {
+      const conversations = await chatApi.getConversations();
+      const total = conversations
+        .filter((c) => c.type === 'MATCH')
+        .reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+      setTotalUnread(total);
+    } catch (err) {
+      console.error('Failed to load unread count:', err);
     }
   };
 
@@ -119,6 +134,14 @@ const DashboardPage: React.FC = () => {
         <div className="max-w-2xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-heading font-bold text-white">Synchro</h1>
           <div className="flex items-center space-x-4">
+            <button onClick={() => navigate('/chat')} className="relative text-white text-sm hover:underline">
+              消息
+              {totalUnread > 0 && (
+                <span className="absolute -top-2 -right-4 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center px-1">
+                  {totalUnread > 99 ? '99+' : totalUnread}
+                </span>
+              )}
+            </button>
             <span className="text-white text-sm">{user?.nickname}</span>
             <button
               onClick={logout}

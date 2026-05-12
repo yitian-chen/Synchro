@@ -23,6 +23,7 @@ const ChatPage: React.FC = () => {
 
     loadMessages();
     connectWebSocket();
+    chatApi.markAsRead(Number(conversationId));
 
     return () => {
       if (stompClientRef.current && stompClientRef.current.connected) {
@@ -91,7 +92,7 @@ const ChatPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="gradient-bg p-4 flex items-center">
-        <button onClick={() => navigate('/dashboard')} className="text-white mr-4">
+        <button onClick={() => navigate('/chat')} className="text-white mr-4">
           ←
         </button>
         <div className="flex-1">

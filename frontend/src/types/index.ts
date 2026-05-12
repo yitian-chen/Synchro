@@ -98,6 +98,7 @@ export interface Conversation {
     content: string;
     createdAt: string;
   };
+  unreadCount: number;
   createdAt: string;
 }
 

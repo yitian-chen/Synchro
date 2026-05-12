@@ -36,6 +36,9 @@ public class Message {
     @Column(name = "is_ai_processed")
     private boolean aiProcessed = false;
 
+    @Column(name = "is_read")
+    private boolean read = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

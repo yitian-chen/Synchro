@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,6 +49,8 @@ public class ChatController {
                                 .build();
                     }
 
+                    int unreadCount = chatService.getUnreadCount(conv.getId(), userId);
+
                     return ConversationResponse.builder()
                             .id(conv.getId())
                             .type(conv.getConversationType())
@@ -58,6 +61,7 @@ public class ChatController {
                             .title(conv.getTitle())
                             .status(conv.getStatus())
                             .lastMessage(lastMsg)
+                            .unreadCount(unreadCount)
                             .createdAt(conv.getCreatedAt())
                             .build();
                 })
@@ -85,6 +89,15 @@ public class ChatController {
                 .toList();
 
         return ResponseEntity.ok(responses);
+    }
+
+    @Transactional
+    @PutMapping("/api/conversations/{id}/read")
+    public ResponseEntity<Void> markAsRead(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long id) {
+        chatService.markConversationAsRead(id, userId);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/api/conversations/{id}/messages")

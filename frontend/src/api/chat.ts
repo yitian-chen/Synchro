@@ -21,4 +21,8 @@ export const chatApi = {
     });
     return response.data;
   },
+
+  markAsRead: async (conversationId: number): Promise<void> => {
+    await api.put(`/conversations/${conversationId}/read`);
+  },
 };
