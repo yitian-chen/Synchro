@@ -11,6 +11,7 @@ const OnboardingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const startedRef = useRef(false);
   const navigate = useNavigate();
 
   const scrollToBottom = () => {
@@ -18,6 +19,8 @@ const OnboardingPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
     startOnboarding();
   }, []);
 
