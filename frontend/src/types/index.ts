@@ -11,6 +11,7 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+  redirectUrl?: string;
 }
 
 export interface Profile {

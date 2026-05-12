@@ -17,8 +17,8 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await register(email, password, nickname);
-      navigate('/onboarding');
+      const redirectUrl = await register(email, password, nickname);
+      navigate(redirectUrl);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

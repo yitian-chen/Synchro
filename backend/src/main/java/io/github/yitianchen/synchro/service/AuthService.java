@@ -90,6 +90,10 @@ public class AuthService {
         }
     }
 
+    private String getRedirectUrl(User.UserStatus status) {
+        return status == User.UserStatus.ACTIVE ? "/dashboard" : "/onboarding";
+    }
+
     private AuthResponse generateAuthResponse(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId(), user.getEmail());
@@ -97,6 +101,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .redirectUrl(getRedirectUrl(user.getStatus()))
                 .user(AuthResponse.UserResponse.builder()
                         .id(user.getId())
                         .email(user.getEmail())
