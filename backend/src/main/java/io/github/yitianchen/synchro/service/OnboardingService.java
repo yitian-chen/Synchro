@@ -47,6 +47,15 @@ public class OnboardingService {
                 .filter(c -> c.getStatus() == Conversation.ConversationStatus.ACTIVE)
                 .findFirst()
                 .orElseGet(() -> {
+                    // 如果用户已有ACTIVE状态的onboarding对话，允许恢复（状态可能因bug未更新）
+                    Conversation existingActive = conversations.stream()
+                            .filter(c -> c.getStatus() == Conversation.ConversationStatus.ACTIVE)
+                            .findFirst()
+                            .orElse(null);
+                    if (existingActive != null) {
+                        return existingActive;
+                    }
+                    // 没有ACTIVE对话且状态不是PENDING_ONBOARDING，则不允许开始新访谈
                     if (user.getStatus() != User.UserStatus.PENDING_ONBOARDING) {
                         throw new IllegalStateException("Onboarding not available. Please contact support.");
                     }
