@@ -79,7 +79,7 @@ const OnboardingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col">
       <div className="gradient-bg p-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-heading font-bold">AI性格访谈</h1>
