@@ -153,7 +153,7 @@ public class OnboardingService {
         history.add(userMessage);
         history.add(aiMessage);
 
-        boolean shouldComplete = history.size() / 2 > MAX_EXCHANGES_BEFORE_SUMMARY;
+        boolean shouldComplete = history.size() / 2 >= MAX_EXCHANGES_BEFORE_SUMMARY;
         if (shouldComplete) {
             return completeOnboarding(userId, conversation, history);
         }
