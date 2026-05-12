@@ -164,8 +164,8 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Reset Onboarding - 显示给所有未完成onboarding的用户 */}
-        {(user?.status === 'PENDING_ONBOARDING' || !user?.onboardingCompleted) && (
+        {/* Reset Onboarding - 对所有状态为ACTIVE的用户可见 */}
+        {user?.status === 'ACTIVE' && (
           <div className="card border-2 border-red-300">
             <h3 className="font-semibold mb-2 text-red-600">重新开始访谈</h3>
             <p className="text-sm text-gray-500 mb-4">
