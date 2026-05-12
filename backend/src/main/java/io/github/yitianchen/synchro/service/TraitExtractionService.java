@@ -1,6 +1,7 @@
 package io.github.yitianchen.synchro.service;
 
 import io.github.yitianchen.synchro.model.Message;
+import io.github.yitianchen.synchro.model.Profile;
 import io.github.yitianchen.synchro.model.UserTrait;
 import io.github.yitianchen.synchro.repository.ProfileRepository;
 import io.github.yitianchen.synchro.repository.UserTraitRepository;
@@ -90,6 +91,24 @@ public class TraitExtractionService {
                 trait.setProfileId(profileId);
                 trait.setSourceMessageId(conversationHistory.get(conversationHistory.size() - 1).getId());
                 userTraitRepository.save(trait);
+            }
+
+            // 更新 profile.traitsSummary，供前端 Dashboard 展示
+            try {
+                List<Map<String, Object>> summaryList = extractedTraits.stream()
+                        .map(t -> Map.<String, Object>of(
+                                "name", t.getTraitName(),
+                                "value", t.getTraitValue().doubleValue(),
+                                "confidence", t.getConfidence().doubleValue()))
+                        .toList();
+                String summaryJson = objectMapper.writeValueAsString(summaryList);
+                profileRepository.findByUserId(userId).ifPresent(profile -> {
+                    profile.setTraitsSummary(summaryJson);
+                    profileRepository.save(profile);
+                });
+                log.info("[TraitExtractionService] traitsSummary updated for userId: {}", userId);
+            } catch (Exception e) {
+                log.warn("[TraitExtractionService] failed to serialize traitsSummary: {}", e.getMessage());
             }
         }
 
