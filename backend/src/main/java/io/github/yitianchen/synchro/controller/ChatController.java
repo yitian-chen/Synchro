@@ -43,6 +43,7 @@ public class ChatController {
                         Message msg = messages.get(0);
                         lastMsg = ConversationResponse.MessageResponse.builder()
                                 .id(msg.getId())
+                                .senderId(msg.getSenderId())
                                 .senderType(msg.getSenderType())
                                 .content(msg.getContent())
                                 .createdAt(msg.getCreatedAt())
@@ -82,6 +83,7 @@ public class ChatController {
         List<ConversationResponse.MessageResponse> responses = messages.stream()
                 .map(msg -> ConversationResponse.MessageResponse.builder()
                         .id(msg.getId())
+                        .senderId(msg.getSenderId())
                         .senderType(msg.getSenderType())
                         .content(msg.getContent())
                         .createdAt(msg.getCreatedAt())
@@ -110,6 +112,7 @@ public class ChatController {
 
         return ResponseEntity.ok(ConversationResponse.MessageResponse.builder()
                 .id(message.getId())
+                .senderId(message.getSenderId())
                 .senderType(message.getSenderType())
                 .content(message.getContent())
                 .createdAt(message.getCreatedAt())

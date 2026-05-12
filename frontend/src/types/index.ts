@@ -102,6 +102,7 @@ export interface Conversation {
 
 export interface ChatMessage {
   id: number;
+  senderId?: number;
   senderType: 'USER' | 'AI';
   content: string;
   createdAt: string;

@@ -57,7 +57,8 @@ public class ChatService {
         // Broadcast via WebSocket
         messagingTemplate.convertAndSend(
                 "/queue/chat/" + recipientId,
-                new ChatMessagePayload(message.getId(), conversationId, senderId, content, message.getCreatedAt())
+                new ChatMessagePayload(message.getId(), conversationId, senderId,
+                        Message.SenderType.USER, content, message.getCreatedAt())
         );
 
         // Cache recent message in Redis
@@ -158,5 +159,7 @@ public class ChatService {
         return text.substring(0, 50) + "...";
     }
 
-    public record ChatMessagePayload(Long id, Long conversationId, Long senderId, String content, java.time.LocalDateTime createdAt) {}
+    public record ChatMessagePayload(Long id, Long conversationId, Long senderId,
+                                     Message.SenderType senderType, String content,
+                                     java.time.LocalDateTime createdAt) {}
 }

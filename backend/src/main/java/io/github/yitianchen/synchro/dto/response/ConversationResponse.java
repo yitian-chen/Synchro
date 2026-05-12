@@ -34,6 +34,7 @@ public class ConversationResponse {
     @AllArgsConstructor
     public static class MessageResponse {
         private Long id;
+        private Long senderId;
         private Message.SenderType senderType;
         private String content;
         private LocalDateTime createdAt;
