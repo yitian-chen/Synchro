@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #FF6B6B;
-  --color-secondary: #4ECDC4;
-  --color-accent: #FFE66D;
+  --color-primary: #5BC0BE;
+  --color-secondary: #96D2CF;
+  --color-accent: #D1EDEA;
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  @apply bg-gray-50 text-gray-900;
+  @apply bg-gray-50 text-gray-800;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -18,17 +18,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .gradient-bg {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #7AC8C5 100%);
 }
 
 .btn-primary {
-  @apply bg-primary hover:bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+  @apply bg-primary hover:bg-[#4DADAB] text-white font-semibold py-2 px-4 rounded-lg transition-colors;
 }
 
 .btn-secondary {
-  @apply bg-secondary hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+  @apply bg-secondary hover:bg-[#7FC2BE] text-white font-semibold py-2 px-4 rounded-lg transition-colors;
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-md p-6;
+  @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
 }

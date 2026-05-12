@@ -26,6 +26,9 @@ public class UserProfileResponse {
     private Integer age;
     private Profile.Gender gender;
     private String location;
+    private Long cityId;
+    private String provinceName;
+    private String cityName;
     private String preferences;
     private BigDecimal compatibilityScore;
     private String traitsSummary;

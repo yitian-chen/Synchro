@@ -123,20 +123,73 @@ public class MatchingService {
         double prefMatch = calculatePreferenceMatch(userId1, userId2);
         double complementarity = calculateComplementarity(userId1, userId2);
 
-        double totalScore = traitSim * traitSimilarityWeight
-                + semanticSim * semanticSimilarityWeight
-                + prefMatch * preferenceMatchWeight
-                + complementarity * complementarityWeight;
+        // 意向对象匹配度（双向平均）
+        double idealPartnerScore = embeddingService.calculateIdealPartnerMatch(userId1, userId2);
 
-        log.debug("[MatchingService] Score for {} vs {}: trait={}, semantic={}, pref={}, comp={}, total={}",
+        // 从双方偏好出发分别计算个性化分数，然后取平均
+        Profile.MatchingPreference pref1 = getMatchingPreference(userId1);
+        Profile.MatchingPreference pref2 = getMatchingPreference(userId2);
+
+        double score1 = calculatePersonalizedScore(pref1, traitSim, semanticSim, prefMatch, complementarity);
+        double score2 = calculatePersonalizedScore(pref2, traitSim, semanticSim, prefMatch, complementarity);
+
+        double personalizedScore = (score1 + score2) / 2.0;
+
+        // 最终分 = 个性化基础 * 0.8 + 意向匹配度 * 0.2
+        double totalScore = personalizedScore * 0.8 + idealPartnerScore * 0.2;
+
+        log.debug("[MatchingService] Score for {} vs {}: trait={}, semantic={}, pref={}, comp={}, ideal={}, total={}",
                 userId1, userId2,
                 String.format("%.4f", traitSim),
                 String.format("%.4f", semanticSim),
                 String.format("%.4f", prefMatch),
                 String.format("%.4f", complementarity),
+                String.format("%.4f", idealPartnerScore),
                 String.format("%.4f", totalScore));
 
         return totalScore;
+    }
+
+    /**
+     * 根据用户偏好调整特质相似度和互补性的权重。
+     * SIMILAR = 提高特质相似度权重，降低互补权重
+     * COMPLEMENTARY = 反之
+     * BALANCED = 维持配置权重
+     */
+    private double calculatePersonalizedScore(Profile.MatchingPreference preference,
+                                               double traitSim, double semanticSim,
+                                               double prefMatch, double complementarity) {
+        double traitW = traitSimilarityWeight;
+        double complW = complementarityWeight;
+
+        switch (preference) {
+            case SIMILAR:
+                traitW += 0.15;
+                complW -= 0.15;
+                break;
+            case COMPLEMENTARY:
+                traitW -= 0.15;
+                complW += 0.15;
+                break;
+            case BALANCED:
+            default:
+                break;
+        }
+
+        // 归一化，确保四项之和为 1.0
+        double total = traitW + semanticSimilarityWeight + preferenceMatchWeight + complW;
+        traitW /= total;
+        complW /= total;
+        double semW = semanticSimilarityWeight / total;
+        double prefW = preferenceMatchWeight / total;
+
+        return traitSim * traitW + semanticSim * semW + prefMatch * prefW + complementarity * complW;
+    }
+
+    private Profile.MatchingPreference getMatchingPreference(Long userId) {
+        return profileRepository.findByUserId(userId)
+                .map(Profile::getMatchingPreference)
+                .orElse(Profile.MatchingPreference.BALANCED);
     }
 
     private double calculateTraitSimilarity(Long userId1, Long userId2) {

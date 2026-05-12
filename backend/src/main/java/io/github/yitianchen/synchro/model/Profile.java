@@ -31,6 +31,9 @@ public class Profile {
 
     private String location;
 
+    @Column(name = "city_id")
+    private Long cityId;
+
     @Column(columnDefinition = "JSON")
     private String preferences;
 

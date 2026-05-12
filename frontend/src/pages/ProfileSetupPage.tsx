@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../api/user';
+import LocationPicker from '../components/LocationPicker';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
@@ -36,6 +37,9 @@ const ProfileSetupPage: React.FC = () => {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
   const [location, setLocation] = useState('');
+  const [cityId, setCityId] = useState<number | undefined>();
+  const [idealPartnerDescription, setIdealPartnerDescription] = useState('');
+  const [matchingPreference, setMatchingPreference] = useState<'SIMILAR' | 'COMPLEMENTARY' | 'BALANCED'>('BALANCED');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -84,10 +88,8 @@ const ProfileSetupPage: React.FC = () => {
       }
     }
     if (!gender) newErrors.gender = '请选择性别';
-    if (!location.trim()) {
-      newErrors.location = '请填写所在地';
-    } else if (location.length > 255) {
-      newErrors.location = '所在地不超过 255 字';
+    if (!cityId) {
+      newErrors.location = '请选择所在地';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -104,6 +106,9 @@ const ProfileSetupPage: React.FC = () => {
         age: parseInt(age, 10),
         gender: gender as Gender,
         location: location.trim(),
+        cityId,
+        idealPartnerDescription: idealPartnerDescription.trim() || undefined,
+        matchingPreference,
       });
       setShowModal(true);
     } catch (err) {
@@ -198,19 +203,61 @@ const ProfileSetupPage: React.FC = () => {
               {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender}</p>}
             </div>
 
+            <LocationPicker
+              onChange={(newCityId, locationLabel) => {
+                setCityId(newCityId);
+                setLocation(locationLabel);
+              }}
+              error={errors.location}
+            />
+
+            {/* 意向对象描述 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                所在地 <span className="text-red-500">*</span>
+                你理想中的伴侣是什么样的人？
               </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                maxLength={255}
-                placeholder="城市或地区"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+              <textarea
+                value={idealPartnerDescription}
+                onChange={(e) => setIdealPartnerDescription(e.target.value)}
+                rows={4}
+                placeholder="描述你理想中的伴侣的性格、生活方式、价值观等..."
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none"
               />
-              {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+              <div className="flex justify-between mt-1">
+                {errors.idealPartnerDescription ? (
+                  <p className="text-red-500 text-xs">{errors.idealPartnerDescription}</p>
+                ) : (
+                  <span />
+                )}
+                <span className="text-xs text-gray-400">{idealPartnerDescription.length}/1000</span>
+              </div>
+            </div>
+
+            {/* 匹配偏好 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                你希望对方和你？
+              </label>
+              <div className="flex gap-3">
+                {[
+                  { value: 'SIMILAR' as const, label: '更相似' },
+                  { value: 'COMPLEMENTARY' as const, label: '更互补' },
+                  { value: 'BALANCED' as const, label: '都可以' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setMatchingPreference(opt.value)}
+                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      matchingPreference === opt.value
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-gray-600 border-gray-300 hover:border-primary'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {errors.submit && (

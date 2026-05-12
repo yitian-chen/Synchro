@@ -27,9 +27,25 @@ export interface Profile {
   age?: number;
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   location?: string;
+  cityId?: number;
+  provinceName?: string;
+  cityName?: string;
   preferences?: string;
   compatibilityScore?: number;
   traitsSummary?: string;
+  idealPartnerDescription?: string;
+  matchingPreference?: 'SIMILAR' | 'COMPLEMENTARY' | 'BALANCED';
+}
+
+export interface Province {
+  id: number;
+  name: string;
+}
+
+export interface City {
+  id: number;
+  provinceId: number;
+  name: string;
 }
 
 export interface OnboardingMessage {

@@ -86,6 +86,55 @@ public class EmbeddingService {
         return cosineSimilarity(embedding1, embedding2);
     }
 
+    public void saveIdealPartnerEmbedding(Long userId, String description) {
+        if (description == null || description.isBlank()) {
+            log.warn("[EmbeddingService] Empty ideal partner description for userId: {}", userId);
+            return;
+        }
+        float[] embeddingVector = embedText(description);
+        String key = VECTOR_KEY_PREFIX + userId;
+        redisTemplate.opsForHash().put(key, "ideal_partner_embedding", serializeVector(embeddingVector));
+        redisTemplate.opsForHash().put(key, "ideal_partner_summary", description);
+        log.info("[EmbeddingService] Saved ideal partner embedding for userId: {}", userId);
+    }
+
+    public float[] getIdealPartnerEmbedding(Long userId) {
+        String key = VECTOR_KEY_PREFIX + userId;
+        Object embeddingObj = redisTemplate.opsForHash().get(key, "ideal_partner_embedding");
+        if (embeddingObj == null) {
+            return null;
+        }
+        return deserializeVector(embeddingObj);
+    }
+
+    /**
+     * 计算双向意向匹配度:
+     * - A的意向描述 vs B的自我介绍 + B的意向描述 vs A的自我介绍
+     * - 两个方向取平均
+     */
+    public double calculateIdealPartnerMatch(Long userId1, Long userId2) {
+        float[] user1Ideal = getIdealPartnerEmbedding(userId1);
+        float[] user1Bio = getUserEmbedding(userId1);
+        float[] user2Ideal = getIdealPartnerEmbedding(userId2);
+        float[] user2Bio = getUserEmbedding(userId2);
+
+        if (user1Ideal == null && user2Ideal == null) {
+            return 0.5; // 双方都无意向描述，中性值
+        }
+
+        double match1 = 0.5; // 默认中性
+        double match2 = 0.5;
+
+        if (user1Ideal != null && user2Bio != null) {
+            match1 = cosineSimilarity(user1Ideal, user2Bio);
+        }
+        if (user2Ideal != null && user1Bio != null) {
+            match2 = cosineSimilarity(user2Ideal, user1Bio);
+        }
+
+        return (match1 + match2) / 2.0;
+    }
+
     private String serializeVector(float[] vector) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < vector.length; i++) {

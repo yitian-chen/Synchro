@@ -2,9 +2,13 @@ package io.github.yitianchen.synchro.service;
 
 import io.github.yitianchen.synchro.dto.request.UpdateProfileRequest;
 import io.github.yitianchen.synchro.dto.response.UserProfileResponse;
+import io.github.yitianchen.synchro.model.City;
 import io.github.yitianchen.synchro.model.Profile;
+import io.github.yitianchen.synchro.model.Province;
 import io.github.yitianchen.synchro.model.User;
+import io.github.yitianchen.synchro.repository.CityRepository;
 import io.github.yitianchen.synchro.repository.ProfileRepository;
+import io.github.yitianchen.synchro.repository.ProvinceRepository;
 import io.github.yitianchen.synchro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +20,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
+    private final EmbeddingService embeddingService;
+    private final CityRepository cityRepository;
+    private final ProvinceRepository provinceRepository;
 
     public UserProfileResponse getCurrentUserProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -51,11 +58,31 @@ public class UserService {
         if (request.getLocation() != null) {
             profile.setLocation(request.getLocation());
         }
+        // 通过 cityId 自动填充 location（省份/城市）
+        if (request.getCityId() != null) {
+            cityRepository.findById(request.getCityId()).ifPresent(city -> {
+                profile.setCityId(city.getId());
+                provinceRepository.findById(city.getProvinceId()).ifPresent(province -> {
+                    profile.setLocation(province.getName() + " " + city.getName());
+                });
+            });
+        }
         if (request.getPreferences() != null && !request.getPreferences().isEmpty()) {
             profile.setPreferences(request.getPreferences());
         }
+        if (request.getIdealPartnerDescription() != null) {
+            profile.setIdealPartnerDescription(request.getIdealPartnerDescription());
+        }
+        if (request.getMatchingPreference() != null && !request.getMatchingPreference().isEmpty()) {
+            profile.setMatchingPreference(Profile.MatchingPreference.valueOf(request.getMatchingPreference()));
+        }
 
         profileRepository.save(profile);
+
+        // 异步生成意向描述的向量嵌入
+        if (request.getIdealPartnerDescription() != null) {
+            embeddingService.saveIdealPartnerEmbedding(userId, request.getIdealPartnerDescription());
+        }
 
         return buildUserProfileResponse(user, profile);
     }
@@ -80,6 +107,21 @@ public class UserService {
     }
 
     private UserProfileResponse buildUserProfileResponse(User user, Profile profile) {
+        // 查询城市/省份名称用于响应
+        String provinceName = null;
+        String cityName = null;
+        if (profile.getCityId() != null) {
+            var cityOpt = cityRepository.findById(profile.getCityId());
+            if (cityOpt.isPresent()) {
+                City city = cityOpt.get();
+                cityName = city.getName();
+                var provinceOpt = provinceRepository.findById(city.getProvinceId());
+                if (provinceOpt.isPresent()) {
+                    provinceName = provinceOpt.get().getName();
+                }
+            }
+        }
+
         return UserProfileResponse.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
@@ -92,9 +134,14 @@ public class UserService {
                 .age(profile.getAge())
                 .gender(profile.getGender())
                 .location(profile.getLocation())
+                .cityId(profile.getCityId())
+                .provinceName(provinceName)
+                .cityName(cityName)
                 .preferences(profile.getPreferences())
                 .compatibilityScore(profile.getCompatibilityScore())
                 .traitsSummary(profile.getTraitsSummary())
+                .idealPartnerDescription(profile.getIdealPartnerDescription())
+                .matchingPreference(profile.getMatchingPreference())
                 .build();
     }
 }

@@ -20,6 +20,8 @@ public class UpdateProfileRequest {
     @Size(max = 255, message = "Location must be less than 255 characters")
     private String location;
 
+    private Long cityId;
+
     private String preferences;
 
     private String idealPartnerDescription;
