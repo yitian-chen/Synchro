@@ -44,12 +44,24 @@ const OnboardingPage: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    const userContent = input.trim();
+    const tempId = -Date.now();
+    const tempMessage: OnboardingMessage = {
+      id: tempId,
+      senderType: 'USER',
+      content: userContent,
+      createdAt: new Date().toISOString(),
+    };
+
+    // 乐观更新：立即显示用户消息
+    setMessages((prev) => [...prev, tempMessage]);
+    setInput('');
     setIsLoading(true);
 
     try {
-      const response = await onboardingApi.sendMessage(input);
+      const response = await onboardingApi.sendMessage(userContent);
+      // 用服务端返回的完整消息列表替换（包含用户消息和 AI 回复）
       setMessages(response.messages);
-      setInput('');
       if (response.isComplete) {
         setIsComplete(true);
         if (response.redirectUrl) {
@@ -58,6 +70,8 @@ const OnboardingPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      // 失败时移除临时消息
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } finally {
       setIsLoading(false);
     }
