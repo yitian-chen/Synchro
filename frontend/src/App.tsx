@@ -7,6 +7,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
+import EditProfilePage from './pages/EditProfilePage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -64,6 +65,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/edit"
+        element={
+          <ProtectedRoute>
+            <EditProfilePage />
           </ProtectedRoute>
         }
       />

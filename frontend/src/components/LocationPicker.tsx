@@ -3,17 +3,19 @@ import { locationApi } from '../api/location';
 import type { Province, City } from '../types';
 
 interface LocationPickerProps {
+  defaultCityId?: number;
   onChange: (cityId: number | undefined, locationLabel: string) => void;
   error?: string;
 }
 
-const LocationPicker: React.FC<LocationPickerProps> = ({ onChange, error }) => {
+const LocationPicker: React.FC<LocationPickerProps> = ({ defaultCityId, onChange, error }) => {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [selectedProvinceId, setSelectedProvinceId] = useState<number | ''>('');
   const [selectedCityId, setSelectedCityId] = useState<number | ''>('');
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Load provinces on mount
   useEffect(() => {
@@ -49,6 +51,35 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onChange, error }) => {
     };
     loadCities();
   }, [selectedProvinceId]);
+
+  // Initialize from defaultCityId once provinces are loaded
+  useEffect(() => {
+    if (hasInitialized || !defaultCityId || provinces.length === 0) return;
+
+    // We need to find which province this city belongs to
+    // Load all city data for all provinces to find the matching city
+    const initFromCityId = async () => {
+      // Try to find the city by searching through all provinces
+      for (const province of provinces) {
+        try {
+          const cityList = await locationApi.getCities(province.id);
+          const match = cityList.find(c => c.id === defaultCityId);
+          if (match) {
+            setSelectedProvinceId(province.id);
+            setCities(cityList);
+            setSelectedCityId(match.id);
+            setHasInitialized(true);
+            return;
+          }
+        } catch {
+          continue;
+        }
+      }
+      setHasInitialized(true);
+    };
+
+    initFromCityId();
+  }, [provinces, defaultCityId, hasInitialized]);
 
   const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;

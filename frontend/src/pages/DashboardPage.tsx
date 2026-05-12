@@ -108,14 +108,25 @@ const DashboardPage: React.FC = () => {
       <main className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Profile Card */}
         <div className="card">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold">
-              {user?.nickname?.[0]?.toUpperCase()}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold">
+                {user?.nickname?.[0]?.toUpperCase()}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">{profile?.nickname || user?.nickname}</h2>
+                <p className="text-sm text-gray-500">{profile?.bio || '还没有自我介绍'}</p>
+                {profile?.location && (
+                  <p className="text-xs text-gray-400 mt-1">{profile.location}</p>
+                )}
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">{profile?.nickname || user?.nickname}</h2>
-              <p className="text-sm text-gray-500">{profile?.bio || '还没有自我介绍'}</p>
-            </div>
+            <button
+              onClick={() => navigate('/profile/edit')}
+              className="text-sm text-primary hover:underline whitespace-nowrap"
+            >
+              编辑资料
+            </button>
           </div>
         </div>
 
