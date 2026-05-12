@@ -11,6 +11,7 @@ const DashboardPage: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currentMatch, setCurrentMatch] = useState<Match | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -73,6 +74,30 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('头像图片不能超过 5MB');
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const { avatarUrl } = await userApi.updateAvatar(file);
+      setProfile((prev) => (prev ? { ...prev, avatarUrl } : null));
+      if (user) {
+        const updatedUser = { ...user, avatarUrl };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
+      alert('头像上传失败，请稍后重试');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleMatchingOptInToggle = async () => {
     const newOptIn = !profile?.matchingOptIn;
     try {
@@ -110,8 +135,37 @@ const DashboardPage: React.FC = () => {
         <div className="card">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold">
-                {user?.nickname?.[0]?.toUpperCase()}
+              <div className="relative group">
+                <div className="w-16 h-16 rounded-full bg-primary overflow-hidden flex items-center justify-center text-white text-2xl font-bold">
+                  {(profile?.avatarUrl || user?.avatarUrl) ? (
+                    <img
+                      src={profile?.avatarUrl || user?.avatarUrl}
+                      alt="avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    user?.nickname?.[0]?.toUpperCase()
+                  )}
+                </div>
+                {/* Hover overlay for upload */}
+                <label
+                  htmlFor="avatar-input"
+                  className={`absolute inset-0 rounded-full bg-black bg-opacity-0 hover:bg-opacity-40 flex items-center justify-center cursor-pointer transition-all ${
+                    isUploadingAvatar ? 'bg-opacity-40' : ''
+                  }`}
+                >
+                  <span className={`text-white text-xs ${isUploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                    {isUploadingAvatar ? '上传中...' : '更换'}
+                  </span>
+                </label>
+                <input
+                  type="file"
+                  id="avatar-input"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                  disabled={isUploadingAvatar}
+                />
               </div>
               <div>
                 <h2 className="text-lg font-semibold">{profile?.nickname || user?.nickname}</h2>
