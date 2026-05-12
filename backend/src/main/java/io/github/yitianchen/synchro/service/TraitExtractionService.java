@@ -40,26 +40,39 @@ public class TraitExtractionService {
         }
 
         String prompt = """
-                Extract personality traits, interests, and preferences from the following user description.
-                Return a JSON array of traits with name, value (0.0-1.0), and confidence (0.0-1.0).
+                从以下用户对话描述中提取全面的性格特质、兴趣爱好和择偶偏好。
+                返回 JSON 数组，每项包含 name、value (0.0-1.0)、confidence (0.0-1.0)。
 
-                Traits to extract:
-                - extroversion (1.0=very extroverted, 0.0=very introverted)
-                - openness (1.0=very open to new experiences)
-                - agreeableness (1.0=very agreeable)
-                - adventurousness (1.0=very adventurous)
-                - socialness (1.0=very social)
-                - activity_level (1.0=very active)
-                - romantic (1.0=very romantic)
-                - family_oriented (1.0=family oriented)
-                - career_oriented (1.0=career oriented)
-                - creative (1.0=very creative)
-                - intellectual (1.0=very intellectual)
+                用户性格特质：
+                - extroversion (1.0=非常外向, 0.0=非常内向)
+                - openness (1.0=非常开放, 0.0=传统保守)
+                - agreeableness (1.0=非常友善, 0.0=较难相处)
+                - adventurousness (1.0=热爱冒险, 0.0=偏好安稳)
+                - socialness (1.0=社交达人, 0.0=偏好独处)
+                - activity_level (1.0=精力充沛, 0.0=安静慵懒)
+                - romantic (1.0=浪漫主义者, 0.0=务实理性)
+                - family_oriented (1.0=家庭为重, 0.0=事业为先)
+                - career_oriented (1.0=事业心强, 0.0=随遇而安)
+                - creative (1.0=富有创意, 0.0=脚踏实地)
+                - intellectual (1.0=爱好思考, 0.0=行动派)
+                - emotional_expressiveness (1.0=情感外露, 0.0=内敛沉稳)
+                - conflict_avoidant (1.0=回避冲突, 0.0=直面矛盾)
+                - independence (1.0=高度独立, 0.0=依赖陪伴)
 
-                User description:
+                择偶偏好（影响匹配，value 表示偏好强度）：
+                - partner_extroversion_pref (1.0=希望对方很外向, 0.5=无所谓, 0.0=希望对方内向)
+                - partner_adventurous_pref (1.0=希望对方爱冒险, 0.5=无所谓, 0.0=希望对方安稳)
+                - partner_social_pref (1.0=希望对方社交多, 0.5=无所谓, 0.0=希望对方宅)
+                - importance_appearance (1.0=外表非常重要, 0.0=外表无所谓)
+                - importance_values (1.0=价值观契合非常重要, 0.0=不那么重要)
+                - importance_intelligence (1.0=智商/才华很重要, 0.0=不那么重要)
+                - openness_to_distance (1.0=能接受异地, 0.0=完全不接受)
+                - long_term_goal (1.0=以结婚为目标, 0.5=认真谈恋爱, 0.0=先慢慢了解)
+
+                用户对话内容：
                 %s
 
-                Return ONLY a JSON array, no other text. Example: [{"name":"extroversion","value":0.7,"confidence":0.9}]
+                只返回 JSON 数组，不要其他文字。示例：[{"name":"extroversion","value":0.7,"confidence":0.9}]
                 """.formatted(userContent);
 
         String aiResponse = aiService.chat(prompt, List.of());
