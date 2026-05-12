@@ -12,17 +12,13 @@ const OnboardingPage: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const hasStarted = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    if (!hasStarted.current) {
-      hasStarted.current = true;
-      startOnboarding();
-    }
+    startOnboarding();
   }, []);
 
   useEffect(() => {
@@ -45,31 +41,12 @@ const OnboardingPage: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const savedInput = input;
-    setInput('');
     setIsLoading(true);
 
-    // 乐观地立即显示用户消息
-    const tempId = Date.now();
-    const optimisticMessage: OnboardingMessage = {
-      id: tempId,
-      senderType: 'USER',
-      content: savedInput,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticMessage]);
-
     try {
-      const response = await onboardingApi.sendMessage(savedInput);
-      // 用服务端返回的列表替换，移除乐观消息后去重（以 senderType+content 为 key）
-      setMessages((prev) => {
-        const withoutOptimistic = prev.filter((m) => m.id !== tempId);
-        const existingKeys = new Set(withoutOptimistic.map((m) => `${m.senderType}:${m.content}`));
-        const newMsgs = response.messages.filter(
-          (m) => !existingKeys.has(`${m.senderType}:${m.content}`)
-        );
-        return [...withoutOptimistic, ...newMsgs];
-      });
+      const response = await onboardingApi.sendMessage(input);
+      setMessages(response.messages);
+      setInput('');
       if (response.isComplete) {
         setIsComplete(true);
         if (response.redirectUrl) {
@@ -78,8 +55,6 @@ const OnboardingPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      setInput(savedInput);
     } finally {
       setIsLoading(false);
     }
