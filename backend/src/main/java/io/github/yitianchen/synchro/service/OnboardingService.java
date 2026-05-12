@@ -150,7 +150,7 @@ public class OnboardingService {
         aiMessage.setContent(aiResponse);
         messageRepository.save(aiMessage);
 
-        history.add(userMessage);
+        // userMessage 已在第124行通过DB查询加入history，无需重复添加
         history.add(aiMessage);
 
         boolean shouldComplete = history.size() / 2 >= MAX_EXCHANGES_BEFORE_SUMMARY;
