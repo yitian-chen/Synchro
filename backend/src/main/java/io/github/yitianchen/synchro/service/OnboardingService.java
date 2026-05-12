@@ -121,11 +121,11 @@ public class OnboardingService {
         messageRepository.save(userMessage);
         log.info("[OnboardingService] sendMessage - user message saved, id: {}", userMessage.getId());
 
-        List<Message> history = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+        List<Message> history = new java.util.ArrayList<>(messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId()));
         log.info("[OnboardingService] sendMessage - history size: {}", history.size());
 
         List<AiService.ChatMessageRecord> chatHistory = history.stream()
-                .limit(history.size() - 1) // 排除刚保存的用户消息，避免重复发送
+                .limit(Math.max(0, history.size() - 1)) // 不包含刚保存的用户消息（它已作为参数发送给AI）
                 .map(m -> new AiService.ChatMessageRecord(
                         m.getSenderType() == Message.SenderType.USER ? "user" : "assistant",
                         m.getContent()))
@@ -167,7 +167,7 @@ public class OnboardingService {
                 .findByUserIdAndConversationTypeAndStatus(userId, Conversation.ConversationType.ONBOARDING, Conversation.ConversationStatus.ACTIVE)
                 .orElseThrow(() -> new IllegalStateException("No active onboarding conversation"));
 
-        List<Message> history = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+        List<Message> history = new java.util.ArrayList<>(messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId()));
         return completeOnboarding(userId, conversation, history);
     }
 
