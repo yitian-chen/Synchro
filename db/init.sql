@@ -198,29 +198,29 @@ INSERT INTO cities (province_id, name) VALUES
 
 -- ========== 3. 20 个测试用户 ==========
 -- 测试登录密码均为: password123
--- BCrypt hash: $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
+-- BCrypt hash: $2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu
 
 INSERT INTO users (id, email, password_hash, nickname, avatar_url, status, onboarding_completed, matching_opt_in, created_at, updated_at) VALUES
-(1,  'test1@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '张明远', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(2,  'test2@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '李浩然', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(3,  'test3@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '王子涵', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(4,  'test4@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '刘思远', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(5,  'test5@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '陈天宇', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(6,  'test6@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '赵俊杰', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(7,  'test7@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '孙浩宇', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(8,  'test8@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '周文博', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(9,  'test9@synchro.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '吴子轩', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(10, 'test10@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '郑凯文', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(11, 'test11@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '李晓萱', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(12, 'test12@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '王语嫣', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(13, 'test13@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '张雨桐', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(14, 'test14@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '刘诗涵', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(15, 'test15@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '陈静怡', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(16, 'test16@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '赵梦婷', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(17, 'test17@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '孙悦然', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(18, 'test18@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '周蕾',   NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(19, 'test19@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '吴欣怡', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
-(20, 'test20@synchro.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '郑媛',   NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW());
+(1,  'test1@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '张明远', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(2,  'test2@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '李浩然', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(3,  'test3@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '王子涵', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(4,  'test4@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '刘思远', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(5,  'test5@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '陈天宇', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(6,  'test6@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '赵俊杰', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(7,  'test7@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '孙浩宇', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(8,  'test8@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '周文博', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(9,  'test9@synchro.com',  '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '吴子轩', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(10, 'test10@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '郑凯文', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(11, 'test11@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '李晓萱', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(12, 'test12@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '王语嫣', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(13, 'test13@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '张雨桐', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(14, 'test14@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '刘诗涵', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(15, 'test15@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '陈静怡', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(16, 'test16@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '赵梦婷', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(17, 'test17@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '孙悦然', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(18, 'test18@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '周蕾',   NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(19, 'test19@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '吴欣怡', NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW()),
+(20, 'test20@synchro.com', '$2a$10$JfBzYCQ.2EdBEc1vsrJGkO3XTnV4tSkLTLqFddAVhhcKIQrmrjvDu', '郑媛',   NULL, 'ACTIVE', TRUE, TRUE, NOW(), NOW());
 
 -- ========== 4. 20 个用户资料 ==========
 
