@@ -16,14 +16,21 @@ public class LangChain4jConfig {
     @Value("${ai.openai.model}")
     private String chatModel;
 
-    @Value("${ai.openai.embedding-model}")
-    private String embeddingModel;
-
     @Value("${ai.openai.api-key}")
     private String apiKey;
 
     @Value("${ai.openai.base-url}")
     private String baseUrl;
+
+    // Embedding 独立配置（可对接不同供应商）
+    @Value("${ai.embedding.model}")
+    private String embeddingModel;
+
+    @Value("${ai.embedding.api-key}")
+    private String embeddingApiKey;
+
+    @Value("${ai.embedding.base-url}")
+    private String embeddingBaseUrl;
 
     @Bean
     public ChatModel chatModel() {
@@ -50,9 +57,9 @@ public class LangChain4jConfig {
     @Bean
     public EmbeddingModel embeddingModel() {
         return OpenAiEmbeddingModel.builder()
-                .apiKey(apiKey)
+                .apiKey(embeddingApiKey)
                 .modelName(embeddingModel)
-                .baseUrl(baseUrl)
+                .baseUrl(embeddingBaseUrl)
                 .build();
     }
 }

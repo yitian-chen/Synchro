@@ -11,10 +11,12 @@ import io.github.yitianchen.synchro.repository.ProfileRepository;
 import io.github.yitianchen.synchro.repository.ProvinceRepository;
 import io.github.yitianchen.synchro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserService {
 
@@ -79,9 +81,13 @@ public class UserService {
 
         profileRepository.save(profile);
 
-        // 异步生成意向描述的向量嵌入
+        // 生成意向描述的向量嵌入（非关键路径，失败不应阻止资料保存）
         if (request.getIdealPartnerDescription() != null) {
-            embeddingService.saveIdealPartnerEmbedding(userId, request.getIdealPartnerDescription());
+            try {
+                embeddingService.saveIdealPartnerEmbedding(userId, request.getIdealPartnerDescription());
+            } catch (Exception e) {
+                log.warn("[UserService] Failed to save ideal partner embedding: {}", e.getMessage());
+            }
         }
 
         return buildUserProfileResponse(user, profile);

@@ -58,7 +58,10 @@ ai:
     api-key: ${OPENAI_API_KEY}
     model: ${OPENAI_API_MODEL:deepseek-v4-flash}
     base-url: ${OPENAI_BASE_URL:https://api.deepseek.com/v1}
-    embedding-model: ${OPENAI_EMBEDDING_MODEL:deepseek-v4-flash}
+  embedding:
+    api-key: ${EMBEDDING_API_KEY:${OPENAI_API_KEY:}}
+    base-url: ${EMBEDDING_BASE_URL:${OPENAI_BASE_URL:https://api.openai.com/v1}}
+    model: ${EMBEDDING_MODEL:text-embedding-3-small}
 
 # Matching Algorithm Weights (configurable per CLAUDE.md)
 matching:
