@@ -11,6 +11,10 @@ const OnboardingPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [exchangeCount, setExchangeCount] = useState(0);
+  const [redirectUrl, setRedirectUrl] = useState('/dashboard');
+  const MAX_EXCHANGES = 8;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const startedRef = useRef(false);
   const navigate = useNavigate();
@@ -33,8 +37,11 @@ const OnboardingPage: React.FC = () => {
     try {
       const response = await onboardingApi.start();
       setMessages(response.messages);
+      setExchangeCount(response.exchangeCount);
       if (response.isComplete) {
         setIsComplete(true);
+        setShowCompleteModal(true);
+        if (response.redirectUrl) setRedirectUrl(response.redirectUrl);
       }
     } catch (err) {
       console.error('Failed to start onboarding:', err);
@@ -63,11 +70,11 @@ const OnboardingPage: React.FC = () => {
       const response = await onboardingApi.sendMessage(userContent);
       // 用服务端返回的完整消息列表替换（包含用户消息和 AI 回复）
       setMessages(response.messages);
+      setExchangeCount(response.exchangeCount);
       if (response.isComplete) {
         setIsComplete(true);
-        if (response.redirectUrl) {
-          setTimeout(() => navigate(response.redirectUrl!), 2000);
-        }
+        setShowCompleteModal(true);
+        if (response.redirectUrl) setRedirectUrl(response.redirectUrl);
       }
     } catch (err) {
       console.error('Failed to send message:', err);
@@ -83,7 +90,11 @@ const OnboardingPage: React.FC = () => {
       <div className="gradient-bg p-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-heading font-bold">AI性格访谈</h1>
-          <p className="text-sm opacity-80">和我们AI聊聊，让它了解你</p>
+          <div className="text-xs opacity-70 flex items-center gap-1">
+            <span>{exchangeCount > 0 ? `第${Math.min(exchangeCount, MAX_EXCHANGES)}轮` : '准备开始'}</span>
+            <span>/</span>
+            <span>共{MAX_EXCHANGES}轮</span>
+          </div>
         </div>
         <button
           onClick={logout}
@@ -132,7 +143,7 @@ const OnboardingPage: React.FC = () => {
       {isComplete ? (
         <div className="p-4 bg-white border-t">
           <p className="text-center text-green-600 font-semibold">
-            访谈完成！正在跳转到首页...
+            访谈已完成
           </p>
         </div>
       ) : (
@@ -155,6 +166,29 @@ const OnboardingPage: React.FC = () => {
             </button>
           </div>
         </form>
+      )}
+
+      {/* Completion Modal */}
+      {showCompleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 mx-4 max-w-sm w-full shadow-xl">
+            <div className="w-16 h-16 mx-auto rounded-full bg-accent flex items-center justify-center text-3xl mb-4">
+              ✨
+            </div>
+            <h2 className="text-xl font-bold text-center mb-2">访谈完成！</h2>
+            <p className="text-gray-500 text-center text-sm mb-6">
+              恭喜你完成了AI性格访谈！
+              <br />
+              你的个人资料已经完善，可以开始使用 Synchro 了。
+            </p>
+            <button
+              onClick={() => navigate(redirectUrl)}
+              className="btn-primary w-full py-3 rounded-xl text-base"
+            >
+              进入主页
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

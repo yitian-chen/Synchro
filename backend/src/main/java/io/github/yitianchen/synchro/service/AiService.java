@@ -65,13 +65,24 @@ public class AiService {
 
     @Retry(name = "ai")
     public String chat(String userMessage, List<ChatMessageRecord> history) {
-        log.info("[AiService] chat - START, userMessage: {}", sanitizeForDebug(userMessage));
+        return chat(userMessage, history, false);
+    }
+
+    @Retry(name = "ai")
+    public String chat(String userMessage, List<ChatMessageRecord> history, boolean isLastRound) {
+        log.info("[AiService] chat - START, userMessage: {}, isLastRound: {}", sanitizeForDebug(userMessage), isLastRound);
         log.info("[AiService] chat - history size: {}", history.size());
         for (int i = 0; i < history.size(); i++) {
             log.info("[AiService] chat - history[{}]: role={}, content={}", i, history.get(i).role(), sanitizeForDebug(history.get(i).content()));
         }
 
         StringBuilder fullPrompt = new StringBuilder(ONBOARDING_SYSTEM_PROMPT).append("\n\n");
+
+        if (isLastRound) {
+            fullPrompt.append("[重要] 这是最后一轮对话。请给用户一段温暖真诚的总结和感谢，告诉用户你已经充分了解了他/她。").append("\n");
+            fullPrompt.append("绝对不要再提出任何新的问题。用一段友好、温暖的结束语来结束这次访谈。").append("\n\n");
+        }
+
         for (ChatMessageRecord msg : history) {
             fullPrompt.append(msg.role()).append(": ").append(msg.content()).append("\n");
         }

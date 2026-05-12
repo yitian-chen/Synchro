@@ -141,10 +141,13 @@ public class OnboardingService {
                 .collect(Collectors.toList());
         log.info("[OnboardingService] sendMessage - chatHistory size: {}", chatHistory.size());
 
-        log.info("[OnboardingService] sendMessage - calling aiService.chat...");
+        // 检测是否为第8轮（最后一轮），让AI给出结束语而非新问题
+        boolean isLastRound = history.size() / 2 >= MAX_EXCHANGES_BEFORE_SUMMARY;
+
+        log.info("[OnboardingService] sendMessage - calling aiService.chat, isLastRound: {}...", isLastRound);
         String aiResponse;
         try {
-            aiResponse = aiService.chat(request.getContent(), chatHistory);
+            aiResponse = aiService.chat(request.getContent(), chatHistory, isLastRound);
             log.info("[OnboardingService] sendMessage - aiResponse received, length: {}", aiResponse != null ? aiResponse.length() : "null");
         } catch (Throwable t) {
             log.error("[OnboardingService] AI chat failed: {}, type: {}, stack: {}",
