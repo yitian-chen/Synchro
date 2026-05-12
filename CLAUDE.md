@@ -47,7 +47,8 @@ io.github.yitianchen.synchro/
 ```
 
 ### 核心数据模型
-- **User** → **Profile** → **UserTrait** (特质标签)
+- **User** (含 `matchingOptIn` 参与匹配开关) → **Profile** → **UserTrait** (22个AI提取特质)
+- **Profile** (含 `traitsSummary` JSON 供 Dashboard 展示) → **UserTrait**
 - **Conversation** (类型: ONBOARDING/MATCH) → **Message**
 - **Match** (每周匹配关系)
 
@@ -60,8 +61,13 @@ io.github.yitianchen.synchro/
 
 ### 用户状态流转
 ```
-PENDING_ONBOARDING → (完成AI访谈) → ACTIVE → (周五匹配) → 可聊天
+PENDING_ONBOARDING → (填写个人资料) → (完成AI访谈) → ACTIVE → (周五匹配) → 可聊天
 ```
+
+### 匹配参与开关
+- User 实体 `matchingOptIn` 字段（默认 true）
+- Dashboard 提供 switch 开关，用户可退出/加入每周匹配
+- MatchingService 过滤 `isMatchingOptIn()` = false 的用户
 
 ## API约定
 

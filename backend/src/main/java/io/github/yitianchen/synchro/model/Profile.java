@@ -40,6 +40,13 @@ public class Profile {
     @Column(name = "traits_summary", columnDefinition = "JSON")
     private String traitsSummary;
 
+    @Column(name = "ideal_partner_description", columnDefinition = "TEXT")
+    private String idealPartnerDescription;
+
+    @Column(name = "matching_preference")
+    @Enumerated(EnumType.STRING)
+    private MatchingPreference matchingPreference = MatchingPreference.BALANCED;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -48,5 +55,9 @@ public class Profile {
 
     public enum Gender {
         MALE, FEMALE, OTHER
+    }
+
+    public enum MatchingPreference {
+        SIMILAR, COMPLEMENTARY, BALANCED
     }
 }

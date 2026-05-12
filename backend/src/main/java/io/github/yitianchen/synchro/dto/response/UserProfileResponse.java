@@ -29,4 +29,6 @@ public class UserProfileResponse {
     private String preferences;
     private BigDecimal compatibilityScore;
     private String traitsSummary;
+    private String idealPartnerDescription;
+    private Profile.MatchingPreference matchingPreference;
 }
