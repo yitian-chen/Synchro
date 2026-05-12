@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
+import ProfileSetupPage from './pages/ProfileSetupPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -35,6 +36,14 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
+        path="/profile-setup"
+        element={
+          <ProtectedRoute>
+            <ProfileSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/onboarding"
         element={
           <ProtectedRoute>
@@ -62,7 +71,7 @@ const AppRoutes: React.FC = () => {
         path="/"
         element={
           user?.status === 'PENDING_ONBOARDING' || !user?.onboardingCompleted ? (
-            <Navigate to="/onboarding" replace />
+            <Navigate to="/profile-setup" replace />
           ) : (
             <Navigate to="/dashboard" replace />
           )

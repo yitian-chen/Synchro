@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('refreshToken', response.refreshToken);
     localStorage.setItem('user', JSON.stringify(response.user));
     setUser(response.user);
-    return response.redirectUrl || '/onboarding';
+    return response.redirectUrl || '/profile-setup';
   };
 
   const logout = async () => {

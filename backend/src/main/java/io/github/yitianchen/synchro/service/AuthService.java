@@ -91,7 +91,7 @@ public class AuthService {
     }
 
     private String getRedirectUrl(User.UserStatus status) {
-        return status == User.UserStatus.ACTIVE ? "/dashboard" : "/onboarding";
+        return status == User.UserStatus.ACTIVE ? "/dashboard" : "/profile-setup";
     }
 
     private AuthResponse generateAuthResponse(User user) {
