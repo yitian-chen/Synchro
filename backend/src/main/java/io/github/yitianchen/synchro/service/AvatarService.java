@@ -1,9 +1,6 @@
 package io.github.yitianchen.synchro.service;
 
-import io.minio.BucketExistsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -40,10 +37,36 @@ public class AvatarService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
                 log.info("Created bucket: {}", bucket);
             }
+            // 设置 bucket 为公开读取，使头像 URL 可直接访问
+            setBucketPublicReadPolicy();
         } catch (Exception e) {
             log.error("Failed to ensure bucket exists: {}", e.getMessage());
             throw new RuntimeException("Failed to ensure bucket exists: " + bucket, e);
         }
+    }
+
+    private void setBucketPublicReadPolicy() throws Exception {
+        String policy = String.format("""
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {"AWS": ["*"]},
+                      "Action": ["s3:GetObject"],
+                      "Resource": ["arn:aws:s3:::%s/*"]
+                    }
+                  ]
+                }
+                """, bucket);
+
+        minioClient.setBucketPolicy(
+                SetBucketPolicyArgs.builder()
+                        .bucket(bucket)
+                        .config(policy)
+                        .build()
+        );
+        log.info("Set public read policy for bucket: {}", bucket);
     }
 
     public String uploadAvatar(MultipartFile file, Long userId) throws Exception {
