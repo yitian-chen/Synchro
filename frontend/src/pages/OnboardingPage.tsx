@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { onboardingApi } from '../api/onboarding';
 import type { OnboardingMessage } from '../types';
+import ReactMarkdown from 'react-markdown';
 
 const OnboardingPage: React.FC = () => {
   const { logout } = useAuth();
@@ -105,7 +106,13 @@ const OnboardingPage: React.FC = () => {
                   : 'bg-white text-gray-800 rounded-bl-sm shadow'
               }`}
             >
-              <p>{msg.content}</p>
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => <span className="message-content">{children}</span>,
+                }}
+              >
+                {msg.content}
+              </ReactMarkdown>
               <span className="text-xs opacity-60 mt-1 block">
                 {new Date(msg.createdAt).toLocaleTimeString()}
               </span>

@@ -4,6 +4,7 @@ import { chatApi } from '../api/chat';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import type { ChatMessage } from '../types';
+import ReactMarkdown from 'react-markdown';
 
 const ChatPage: React.FC = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -116,7 +117,13 @@ const ChatPage: React.FC = () => {
                   : 'bg-white text-gray-800 rounded-bl-sm shadow'
               }`}
             >
-              <p>{msg.content}</p>
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => <span className="message-content">{children}</span>,
+                }}
+              >
+                {msg.content}
+              </ReactMarkdown>
               <span className="text-xs opacity-60 mt-1 block">
                 {new Date(msg.createdAt).toLocaleTimeString()}
               </span>
