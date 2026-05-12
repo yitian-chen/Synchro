@@ -76,6 +76,10 @@ public class ChatService {
                 .toList();
     }
 
+    public java.util.Optional<Message> getLastConversationMessage(Long conversationId) {
+        return messageRepository.findFirstByConversationIdOrderByCreatedAtDesc(conversationId);
+    }
+
     /**
      * 获取用户参与的所有对话（作为所有者或参与者）
      */

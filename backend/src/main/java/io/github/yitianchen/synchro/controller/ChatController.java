@@ -37,10 +37,10 @@ public class ChatController {
                             : conv.getUserId();
                     User participant = userRepository.findById(participantId).orElse(null);
 
-                    List<Message> messages = chatService.getConversationMessages(conv.getId(), 1, 0);
+                    var lastMsgOpt = chatService.getLastConversationMessage(conv.getId());
                     ConversationResponse.MessageResponse lastMsg = null;
-                    if (!messages.isEmpty()) {
-                        Message msg = messages.get(0);
+                    if (lastMsgOpt.isPresent()) {
+                        Message msg = lastMsgOpt.get();
                         lastMsg = ConversationResponse.MessageResponse.builder()
                                 .id(msg.getId())
                                 .senderId(msg.getSenderId())

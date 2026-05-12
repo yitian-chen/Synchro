@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByConversationIdOrderByCreatedAtAsc(Long conversationId);
+    java.util.Optional<Message> findFirstByConversationIdOrderByCreatedAtDesc(Long conversationId);
     List<Message> findByConversationIdAndAiProcessedFalse(Long conversationId);
     int countByConversationIdAndSenderIdNotAndReadFalse(Long conversationId, Long senderId);
 

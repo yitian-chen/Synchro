@@ -121,7 +121,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col">
       <header className="gradient-bg p-4 flex items-center">
         <button onClick={() => navigate('/chat')} className="text-white mr-4">
           ←
