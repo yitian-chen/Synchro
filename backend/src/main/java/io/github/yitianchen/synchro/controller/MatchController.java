@@ -31,12 +31,10 @@ public class MatchController {
         }
 
         Match match = matchOpt.get();
-        User currentUser = userRepository.findById(userId).orElseThrow();
-        User otherUser = userRepository.findById(
-                match.getUser1Id().equals(userId) ? match.getUser2Id() : match.getUser1Id()
-        ).orElseThrow();
+        User user1 = userRepository.findById(match.getUser1Id()).orElseThrow();
+        User user2 = userRepository.findById(match.getUser2Id()).orElseThrow();
 
-        return ResponseEntity.ok(MatchResponse.fromMatch(match, currentUser, otherUser));
+        return ResponseEntity.ok(MatchResponse.fromMatch(match, user1, user2));
     }
 
     @GetMapping("/history")

@@ -22,8 +22,6 @@ public class UpdateProfileRequest {
 
     private Long cityId;
 
-    private String preferences;
-
     private String idealPartnerDescription;
 
     private String matchingPreference;

@@ -69,9 +69,6 @@ public class UserService {
                 });
             });
         }
-        if (request.getPreferences() != null && !request.getPreferences().isEmpty()) {
-            profile.setPreferences(request.getPreferences());
-        }
         if (request.getIdealPartnerDescription() != null) {
             profile.setIdealPartnerDescription(request.getIdealPartnerDescription());
         }
@@ -143,8 +140,6 @@ public class UserService {
                 .cityId(profile.getCityId())
                 .provinceName(provinceName)
                 .cityName(cityName)
-                .preferences(profile.getPreferences())
-                .compatibilityScore(profile.getCompatibilityScore())
                 .traitsSummary(profile.getTraitsSummary())
                 .idealPartnerDescription(profile.getIdealPartnerDescription())
                 .matchingPreference(profile.getMatchingPreference())

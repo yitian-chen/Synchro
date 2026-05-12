@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,12 +32,6 @@ public class Profile {
 
     @Column(name = "city_id")
     private Long cityId;
-
-    @Column(columnDefinition = "JSON")
-    private String preferences;
-
-    @Column(name = "compatibility_score", precision = 5, scale = 2)
-    private BigDecimal compatibilityScore;
 
     @Column(name = "traits_summary", columnDefinition = "JSON")
     private String traitsSummary;

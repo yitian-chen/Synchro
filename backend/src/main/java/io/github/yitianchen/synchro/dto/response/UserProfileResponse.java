@@ -29,8 +29,6 @@ public class UserProfileResponse {
     private Long cityId;
     private String provinceName;
     private String cityName;
-    private String preferences;
-    private BigDecimal compatibilityScore;
     private String traitsSummary;
     private String idealPartnerDescription;
     private Profile.MatchingPreference matchingPreference;

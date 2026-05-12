@@ -30,8 +30,6 @@ export interface Profile {
   cityId?: number;
   provinceName?: string;
   cityName?: string;
-  preferences?: string;
-  compatibilityScore?: number;
   traitsSummary?: string;
   idealPartnerDescription?: string;
   matchingPreference?: 'SIMILAR' | 'COMPLEMENTARY' | 'BALANCED';
