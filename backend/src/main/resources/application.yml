@@ -61,7 +61,7 @@ ai:
   embedding:
     api-key: ${EMBEDDING_API_KEY:${OPENAI_API_KEY:}}
     base-url: ${EMBEDDING_BASE_URL:${OPENAI_BASE_URL:https://api.openai.com/v1}}
-    model: ${EMBEDDING_MODEL:text-embedding-3-small}
+    model: ${EMBEDDING_MODEL:text-embedding-v4}
 
 # Matching Algorithm Weights (configurable per CLAUDE.md)
 matching:
