@@ -11,6 +11,7 @@ import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.request.ToolChoice;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
@@ -137,17 +138,26 @@ public class AiService {
             ChatRequest request = ChatRequest.builder()
                     .messages(mutableMessages)
                     .toolSpecifications(toolSpecifications)
+                    .toolChoice(ToolChoice.AUTO)
                     .build();
 
             log.info("[AiService] chatWithTools - loop {} calling chatModel, {} messages, {} tools",
                     loop, mutableMessages.size(), toolSpecifications.size());
+            for (ToolSpecification spec : toolSpecifications) {
+                log.info("[AiService] chatWithTools - tool spec: name={} desc={}",
+                        spec.name(), spec.description());
+            }
 
             ChatResponse response = chatModel.chat(request);
             aiMessage = response.aiMessage();
 
+            log.info("[AiService] chatWithTools - hasToolCalls={} finishReason={} textLen={}",
+                    aiMessage.hasToolExecutionRequests(),
+                    response.finishReason(),
+                    aiMessage.text() != null ? aiMessage.text().length() : 0);
+
             if (!aiMessage.hasToolExecutionRequests()) {
-                log.info("[AiService] chatWithTools - no tool requests, returning text length={}",
-                        aiMessage.text() != null ? aiMessage.text().length() : 0);
+                log.info("[AiService] chatWithTools - no tool requests, returning text.");
                 return aiMessage;
             }
 
