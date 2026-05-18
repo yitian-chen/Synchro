@@ -394,6 +394,13 @@ public class OnboardingService {
         }
 
         StringBuilder prompt = new StringBuilder();
+
+        if (isLastRound) {
+            prompt.append("!!! 这是最后一轮对话，不要问任何问题 !!!\n");
+            prompt.append("对话访谈已结束。你的任务：给用户一段温暖真诚的总结，感谢用户的参与。\n");
+            prompt.append("不要使用任何工具。不要提出新问题。直接输出告别语。\n\n");
+        }
+
         prompt.append("你是 Synchro 的 AI 交友助手，正在进行一场深入的性格与喜好访谈。\n");
         prompt.append("你的目标是通过对话全面了解用户，帮助他们建立精准的交友档案。\n\n");
 
@@ -436,19 +443,16 @@ public class OnboardingService {
         prompt.append("- 全程中文交流\n\n");
 
         // ── Tool call format instruction at END for recency bias ──
-        prompt.append("[重要] 回复时先输出工具调用，再输出对话文字，使用以下格式：\n");
-        prompt.append("<|tool_call|>\n");
-        prompt.append("{\"name\": \"savePersonalityTrait\", \"arguments\": {\"traitName\": \"extroversion\", \"value\": 0.8, \"confidence\": 0.9, \"reason\": \"用户说自己很外向\"}}\n");
-        prompt.append("<|/tool_call|>\n");
-        prompt.append("<|tool_call|>\n");
-        prompt.append("{\"name\": \"markTopicCovered\", \"arguments\": {\"topic\": \"hobbies_lifestyle\"}}\n");
-        prompt.append("<|/tool_call|>\n");
-        prompt.append("然后输出你的对话文字。如果没有需要保存的特质或标记的话题，可以跳过工具调用直接输出对话。”\n");
-        prompt.append("你的回复将按以下步骤处理：1) tool_call 块被提取并在后台执行，2) 用户只看到对话文字部分。\n");
-
-        if (isLastRound) {
-            prompt.append("\n[重要] 这是最后一轮对话。请给用户一段温暖真诚的总结和感谢。\n");
-            prompt.append("绝对不要再提出新的问题。用友好温暖的结束语来结束访谈。\n");
+        if (!isLastRound) {
+            prompt.append("[重要] 回复时先输出工具调用，再输出对话文字，使用以下格式：\n");
+            prompt.append("<|tool_call|>\n");
+            prompt.append("{\"name\": \"savePersonalityTrait\", \"arguments\": {\"traitName\": \"extroversion\", \"value\": 0.8, \"confidence\": 0.9, \"reason\": \"用户说自己很外向\"}}\n");
+            prompt.append("<|/tool_call|>\n");
+            prompt.append("<|tool_call|>\n");
+            prompt.append("{\"name\": \"markTopicCovered\", \"arguments\": {\"topic\": \"hobbies_lifestyle\"}}\n");
+            prompt.append("<|/tool_call|>\n");
+            prompt.append("然后输出你的对话文字。如果没有需要保存的特质或标记的话题，可以跳过工具调用直接输出对话。\n");
+            prompt.append("你的回复将按以下步骤处理：1) tool_call 块被提取并在后台执行，2) 用户只看到对话文字部分。\n");
         }
 
         log.info("[OnboardingService] buildDynamicSystemPrompt - userId={} coveredTopics={} traits={} isLastRound={}",

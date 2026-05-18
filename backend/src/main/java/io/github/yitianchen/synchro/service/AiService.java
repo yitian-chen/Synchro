@@ -128,53 +128,34 @@ public class AiService {
             List<ToolSpecification> toolSpecifications,
             OnboardingTools tools) {
 
-        var mutableMessages = new ArrayList<>(messages);
-        AiMessage aiMessage = null;
+        ChatRequest request = ChatRequest.builder()
+                .messages(messages)
+                .build();
 
-        for (int loop = 0; loop < 5; loop++) {
-            ChatRequest request = ChatRequest.builder()
-                    .messages(mutableMessages)
-                    .build();
+        log.info("[AiService] chatWithTools - calling chatModel, {} messages, {} tools",
+                messages.size(), toolSpecifications.size());
+        for (ToolSpecification spec : toolSpecifications) {
+            log.info("[AiService] chatWithTools - tool spec: name={} desc={}",
+                    spec.name(), spec.description());
+        }
 
-            log.info("[AiService] chatWithTools - loop {} calling chatModel, {} messages, {} tools",
-                    loop, mutableMessages.size(), toolSpecifications.size());
-            for (ToolSpecification spec : toolSpecifications) {
-                log.info("[AiService] chatWithTools - tool spec: name={} desc={}",
-                        spec.name(), spec.description());
-            }
+        ChatResponse response = chatModel.chat(request);
+        AiMessage aiMessage = response.aiMessage();
+        String rawText = aiMessage.text();
+        if (rawText == null) rawText = "";
 
-            ChatResponse response = chatModel.chat(request);
-            aiMessage = response.aiMessage();
-            String rawText = aiMessage.text();
-            if (rawText == null) rawText = "";
+        log.info("[AiService] chatWithTools - response textLen={} finishReason={}",
+                rawText.length(), response.finishReason());
 
-            log.info("[AiService] chatWithTools - response textLen={} finishReason={}",
-                    rawText.length(), response.finishReason());
+        var result = parseAndExecuteToolCalls(rawText, tools);
 
-            var result = parseAndExecuteToolCalls(rawText, tools);
-
-            if (result.toolCalls().isEmpty()) {
-                log.info("[AiService] chatWithTools - no tool calls found, returning text.");
-                return AiMessage.from(result.cleanText());
-            }
-
+        if (!result.toolCalls().isEmpty()) {
             log.info("[AiService] chatWithTools - {} tool calls executed: {}",
                     result.toolCalls().size(),
                     result.toolCalls().stream().map(tc -> tc.name).toList());
-
-            StringBuilder toolResultText = new StringBuilder();
-            for (var tc : result.toolCalls()) {
-                toolResultText.append("- ").append(tc.name).append(": ").append(tc.result).append("\n");
-            }
-
-            mutableMessages.add(AiMessage.from(result.cleanText()));
-            mutableMessages.add(SystemMessage.from(
-                    "[系统提示] 以下工具已在后台执行完成：\n" + toolResultText +
-                    "请继续对话，不要再重复调用已成功的工具。"));
         }
 
-        log.warn("[AiService] chatWithTools - max tool loop iterations reached");
-        return aiMessage;
+        return AiMessage.from(result.cleanText());
     }
 
     private record ToolCallParseResult(String cleanText, List<ToolCall> toolCalls) {}
