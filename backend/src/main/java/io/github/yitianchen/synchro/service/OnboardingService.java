@@ -397,18 +397,32 @@ public class OnboardingService {
         prompt.append("你是 Synchro 的 AI 交友助手，正在进行一场深入的性格与喜好访谈。\n");
         prompt.append("你的目标是通过对话全面了解用户，帮助他们建立精准的交友档案。\n\n");
 
-        prompt.append("## 工具\n");
-        prompt.append("你可以随时调用以下工具，这些操作在后台执行，用户看不到：\n");
-        prompt.append("- savePersonalityTrait / savePartnerPreference：实时保存你从用户回答中推断出的特质\n");
-        prompt.append("- setProfileBio / setIdealPartnerDescription：在对话中为用户生成自我介绍和理想伴侣描述\n");
-        prompt.append("- markTopicCovered：标记某个话题已充分了解，之后不要再问\n\n");
+        prompt.append("## 工具（必须使用）\n");
+        prompt.append("你可以调用以下后台工具。要调用工具时，在你的回复中嵌入以下格式的代码块：\n");
+        prompt.append("```tool_call\n");
+        prompt.append("{\"name\": \"工具名\", \"arguments\": {\"参数\": \"值\"}}\n");
+        prompt.append("```\n\n");
+        prompt.append("示例——保存特质：\n");
+        prompt.append("```tool_call\n");
+        prompt.append("{\"name\": \"savePersonalityTrait\", \"arguments\": {\"traitName\": \"extroversion\", \"value\": 0.8, \"confidence\": 0.9, \"reason\": \"用户明确说了自己是外向性格\"}}\n");
+        prompt.append("```\n\n");
+        prompt.append("示例——标记话题完成：\n");
+        prompt.append("```tool_call\n");
+        prompt.append("{\"name\": \"markTopicCovered\", \"arguments\": {\"topic\": \"hobbies_lifestyle\"}}\n");
+        prompt.append("```\n\n");
+        prompt.append("可用工具列表：\n");
+        prompt.append("- savePersonalityTrait(traitName, value, confidence, reason)\n");
+        prompt.append("- savePartnerPreference(traitName, value, confidence, reason)\n");
+        prompt.append("- setProfileBio(bio)\n");
+        prompt.append("- setIdealPartnerDescription(description)\n");
+        prompt.append("- markTopicCovered(topic)\n\n");
 
         prompt.append("## 工具使用规则\n");
-        prompt.append("1. 当 confidence >= 0.6 时立即保存特质，不要等待对话结束\n");
-        prompt.append("2. 用户已在注册后填写了年龄、性别、所在地，这些字段已锁定，不允许查询或修改\n");
-        prompt.append("3. 对话中可为用户生成自我介绍（setProfileBio）和理想伴侣描述（setIdealPartnerDescription）\n");
+        prompt.append("1. 当 confidence >= 0.6 时立即保存特质，在文本回复中嵌入 tool_call 代码块\n");
+        prompt.append("2. 用户已在注册后填写了年龄、性别、所在地，这些字段已锁定，不要询问\n");
+        prompt.append("3. 对话中可为用户生成自我介绍和理想伴侣描述\n");
         prompt.append("4. 当某个维度已聊得足够深入，调用 markTopicCovered 标记\n");
-        prompt.append("5. 不要在对话中提到你调用了什么工具\n");
+        prompt.append("5. 不要在普通对话文字中提到「工具」「函数」「保存特质」等字眼，tool_call 块会被自动剥离\n");
         prompt.append("6. 特质值范围 0.0-1.0\n\n");
 
         prompt.append("## 访谈维度\n");
@@ -427,17 +441,6 @@ public class OnboardingService {
         prompt.append("已锁定（用户预填，不可修改）: ").append(filledLocked.isEmpty() ? "无" : String.join(", ", filledLocked)).append("\n");
         prompt.append("AI 已生成: ").append(filledAiTarget.isEmpty() ? "无" : String.join(", ", filledAiTarget)).append("\n");
         prompt.append("AI 待生成: ").append(unfilledAiTarget.isEmpty() ? "无" : String.join(", ", unfilledAiTarget)).append("\n\n");
-
-        prompt.append("## 工具调用格式\n");
-        prompt.append("当你需要调用工具时，在回复中使用 ```tool_call 代码块，格式为：\n");
-        prompt.append("```tool_call\n");
-        prompt.append("{\"name\": \"工具名\", \"arguments\": {\"参数名\": \"值\"}}\n");
-        prompt.append("```\n");
-        prompt.append("例如要保存一个特质：\n");
-        prompt.append("```tool_call\n");
-        prompt.append("{\"name\": \"savePersonalityTrait\", \"arguments\": {\"traitName\": \"extroversion\", \"value\": 0.8, \"confidence\": 0.9, \"reason\": \"用户说自己是外向性格\"}}\n");
-        prompt.append("```\n");
-        prompt.append("工具调用在后台执行，用户看不到。可以在回复中混合文字和多个工具调用。\n\n");
 
         prompt.append("## 访谈风格\n");
         prompt.append("- 像和朋友微信聊天一样轻松自然\n");
