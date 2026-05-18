@@ -401,8 +401,13 @@ public class OnboardingService {
             prompt.append("不要使用任何工具。不要提出新问题。直接输出告别语。\n\n");
         }
 
-        prompt.append("你是 Synchro 的 AI 交友助手，正在进行一场深入的性格与喜好访谈。\n");
-        prompt.append("你的目标是通过对话全面了解用户，帮助他们建立精准的交友档案。\n\n");
+        prompt.append("你是 Synchro 的 AI 交友助手，正在进行一场性格与喜好访谈。\n");
+        prompt.append("目标：在8轮对话内全面了解用户，建立精准交友档案。\n\n");
+
+        prompt.append("## 节奏要求\n");
+        prompt.append("你只有8轮对话，需要覆盖6个维度。控制节奏：每个维度1-2轮即可，\n");
+        prompt.append("只要获得关键信息就标记为已覆盖并转入下一个维度，不要反复追问。\n");
+        prompt.append("用户明确说\"聊够了\"时必须立即切换话题。\n\n");
 
         prompt.append("## 可用后台工具\n");
         prompt.append("- savePersonalityTrait(traitName, value, confidence, reason) —— 保存性格特质\n");
@@ -437,9 +442,10 @@ public class OnboardingService {
         prompt.append("AI 待生成: ").append(unfilledAiTarget.isEmpty() ? "无" : String.join(", ", unfilledAiTarget)).append("\n\n");
 
         prompt.append("## 访谈风格\n");
-        prompt.append("- 像和朋友微信聊天一样轻松自然\n");
-        prompt.append("- 一次只问一个问题\n");
+        prompt.append("- 轻松友好，但节奏紧凑，不闲聊\n");
+        prompt.append("- 每个话题1-2个问题后，如果获得足够信息就立即转下一个\n");
         prompt.append("- 优先覆盖标记为「待了解」的维度\n");
+        prompt.append("- 如果用户明显不想深入某个话题，果断跳过\n");
         prompt.append("- 全程中文交流\n\n");
 
         // ── Tool call format instruction at END for recency bias ──
