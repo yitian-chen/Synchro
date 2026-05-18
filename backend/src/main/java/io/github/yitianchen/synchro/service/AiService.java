@@ -116,7 +116,7 @@ public class AiService {
     // ── Prompt-based tool calling (model-agnostic, works without native function calling) ──
 
     private static final Pattern TOOL_CALL_PATTERN =
-            Pattern.compile("```tool_call\\s*\\n(\\{.*?})\\s*```", Pattern.DOTALL);
+            Pattern.compile("<\\|tool_call\\|>\\s*\\n(\\{.*?})\\s*\\n<\\|/tool_call\\|>", Pattern.DOTALL);
 
     /**
      * Chat with prompt-based tool calling. Tools are NOT sent via API function calling;
