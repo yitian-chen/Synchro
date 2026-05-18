@@ -116,6 +116,27 @@ public class TraitExtractionService {
         return extractedTraits;
     }
 
+    @Transactional
+    public void updateTraitsSummary(Long userId) {
+        profileRepository.findByUserId(userId).ifPresent(profile -> {
+            List<UserTrait> traits = userTraitRepository.findByProfileId(profile.getId());
+            try {
+                List<Map<String, Object>> summaryList = traits.stream()
+                        .map(t -> Map.<String, Object>of(
+                                "name", t.getTraitName(),
+                                "value", t.getTraitValue().doubleValue(),
+                                "confidence", t.getConfidence().doubleValue()))
+                        .toList();
+                String summaryJson = objectMapper.writeValueAsString(summaryList);
+                profile.setTraitsSummary(summaryJson);
+                profileRepository.save(profile);
+                log.info("[TraitExtractionService] updateTraitsSummary userId={} traitCount={}", userId, traits.size());
+            } catch (Exception e) {
+                log.warn("[TraitExtractionService] failed to serialize traitsSummary: {}", e.getMessage());
+            }
+        });
+    }
+
     private List<UserTrait> parseTraits(String aiResponse, List<Message> history) {
         List<UserTrait> traits = new ArrayList<>();
 

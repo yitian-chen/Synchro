@@ -124,6 +124,18 @@ const OnboardingPage: React.FC = () => {
               >
                 {msg.content}
               </ReactMarkdown>
+              {msg.extractedTraits && msg.extractedTraits.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {msg.extractedTraits.map((trait) => (
+                    <span
+                      key={trait}
+                      className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full"
+                    >
+                      {trait}
+                    </span>
+                  ))}
+                </div>
+              )}
               <span className="text-xs opacity-60 mt-1 block">
                 {new Date(msg.createdAt).toLocaleTimeString()}
               </span>

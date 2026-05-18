@@ -1,20 +1,35 @@
 package io.github.yitianchen.synchro.service;
 
-import dev.langchain4j.model.chat.ChatModel;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import io.github.resilience4j.retry.annotation.Retry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AiService {
 
     private final ChatModel chatModel;
+    private final ObjectMapper objectMapper;
+
+    public AiService(ChatModel chatModel, ObjectMapper objectMapper) {
+        this.chatModel = chatModel;
+        this.objectMapper = objectMapper;
+    }
 
     private static final String ONBOARDING_SYSTEM_PROMPT = """
             你是 Synchro 的 AI 交友助手，正在进行一场深入的性格与喜好访谈。
@@ -63,6 +78,8 @@ public class AiService {
             - 全程用中文交流，称呼自己为"交友助手"
             """;
 
+    // ── Legacy chat (used by TraitExtractionService & startOnboarding) ──
+
     @Retry(name = "ai")
     public String chat(String userMessage, List<ChatMessageRecord> history) {
         return chat(userMessage, history, false);
@@ -97,11 +114,154 @@ public class AiService {
         return responseText;
     }
 
+    // ── New tool-calling chat ──
+
+    /**
+     * Send a chat request with tool calling support. Runs a tool execution loop
+     * (max 5 iterations) until the model returns a plain text response.
+     *
+     * @param messages           structured conversation messages (System, User, Ai, ToolResult)
+     * @param toolSpecifications tool definitions from {@code ToolSpecifications.toolSpecificationsFrom()}
+     * @param tools              the tool instance for dispatching
+     * @return the final AiMessage (may contain text and/or unconsumed tool requests)
+     */
+    public AiMessage chatWithTools(
+            List<ChatMessage> messages,
+            List<ToolSpecification> toolSpecifications,
+            OnboardingTools tools) {
+
+        var mutableMessages = new ArrayList<>(messages);
+        AiMessage aiMessage = null;
+
+        for (int loop = 0; loop < 5; loop++) {
+            ChatRequest request = ChatRequest.builder()
+                    .messages(mutableMessages)
+                    .toolSpecifications(toolSpecifications)
+                    .build();
+
+            log.info("[AiService] chatWithTools - loop {} calling chatModel, {} messages, {} tools",
+                    loop, mutableMessages.size(), toolSpecifications.size());
+
+            ChatResponse response = chatModel.chat(request);
+            aiMessage = response.aiMessage();
+
+            if (!aiMessage.hasToolExecutionRequests()) {
+                log.info("[AiService] chatWithTools - no tool requests, returning text length={}",
+                        aiMessage.text() != null ? aiMessage.text().length() : 0);
+                return aiMessage;
+            }
+
+            log.info("[AiService] chatWithTools - {} tool execution requests", aiMessage.toolExecutionRequests().size());
+
+            // Append the AI message (with tool requests) to conversation
+            mutableMessages.add(aiMessage);
+
+            // Execute each tool and append result messages
+            for (ToolExecutionRequest toolRequest : aiMessage.toolExecutionRequests()) {
+                String result = executeToolCall(toolRequest, tools);
+                mutableMessages.add(ToolExecutionResultMessage.from(toolRequest, result));
+            }
+        }
+
+        log.warn("[AiService] chatWithTools - max tool loop iterations reached");
+        return aiMessage;
+    }
+
+    /**
+     * Build a structured message list from DB history for tool-calling chat.
+     */
+    public List<ChatMessage> buildStructuredMessages(
+            String systemPrompt,
+            List<io.github.yitianchen.synchro.model.Message> dbMessages,
+            String currentUserMessage) {
+
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(SystemMessage.from(systemPrompt));
+
+        for (io.github.yitianchen.synchro.model.Message dbMsg : dbMessages) {
+            if (dbMsg.getContent() == null) continue;
+            if (dbMsg.getSenderType() == io.github.yitianchen.synchro.model.Message.SenderType.USER) {
+                messages.add(UserMessage.from(dbMsg.getContent()));
+            } else if (dbMsg.getSenderType() == io.github.yitianchen.synchro.model.Message.SenderType.AI) {
+                messages.add(AiMessage.from(dbMsg.getContent()));
+            }
+        }
+
+        if (currentUserMessage != null && !currentUserMessage.isEmpty()) {
+            messages.add(UserMessage.from(currentUserMessage));
+        }
+
+        return messages;
+    }
+
+    // ── Tool dispatch ──
+
+    private String executeToolCall(ToolExecutionRequest request, OnboardingTools tools) {
+        String toolName = request.name();
+        log.info("[AiService] executeToolCall - tool={} args={}", toolName, sanitizeForDebug(request.arguments()));
+
+        try {
+            JsonNode args = objectMapper.readTree(request.arguments());
+            return switch (toolName) {
+                case "savePersonalityTrait" -> {
+                    tools.savePersonalityTrait(
+                            args.get("traitName").asText(),
+                            args.get("value").asDouble(),
+                            args.get("confidence").asDouble(),
+                            args.has("reason") ? args.get("reason").asText() : "");
+                    yield "Saved personality trait: " + args.get("traitName").asText();
+                }
+                case "savePartnerPreference" -> {
+                    tools.savePartnerPreference(
+                            args.get("traitName").asText(),
+                            args.get("value").asDouble(),
+                            args.get("confidence").asDouble(),
+                            args.has("reason") ? args.get("reason").asText() : "");
+                    yield "Saved partner preference: " + args.get("traitName").asText();
+                }
+                case "setProfileAge" -> {
+                    tools.setProfileAge(args.get("age").asInt());
+                    yield "Profile age set to " + args.get("age").asInt();
+                }
+                case "setProfileGender" -> {
+                    tools.setProfileGender(args.get("gender").asText());
+                    yield "Profile gender set to " + args.get("gender").asText();
+                }
+                case "setProfileLocation" -> {
+                    tools.setProfileLocation(args.get("location").asText());
+                    yield "Profile location set to " + args.get("location").asText();
+                }
+                case "setProfileBio" -> {
+                    tools.setProfileBio(args.get("bio").asText());
+                    yield "Profile bio updated.";
+                }
+                case "setIdealPartnerDescription" -> {
+                    tools.setIdealPartnerDescription(args.get("description").asText());
+                    yield "Ideal partner description updated.";
+                }
+                case "markTopicCovered" -> {
+                    tools.markTopicCovered(args.get("topic").asText());
+                    yield "Topic marked as covered: " + args.get("topic").asText();
+                }
+                default -> {
+                    log.warn("[AiService] executeToolCall - unknown tool: {}", toolName);
+                    yield "Unknown tool: " + toolName;
+                }
+            };
+        } catch (Exception e) {
+            log.error("[AiService] executeToolCall - failed for {}: {}", toolName, e.getMessage());
+            return "Tool execution error: " + e.getMessage();
+        }
+    }
+
+    // ── Utilities ──
+
     private String sanitizeForDebug(String text) {
         if (text == null) return "null";
         if (text.length() <= 100) return text;
         return text.substring(0, 100) + "...";
     }
 
+    @Deprecated(forRemoval = false)
     public record ChatMessageRecord(String role, String content) {}
 }
