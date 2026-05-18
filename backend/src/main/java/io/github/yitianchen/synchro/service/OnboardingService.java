@@ -408,6 +408,8 @@ public class OnboardingService {
         prompt.append("- 用户已锁定：age, gender, location（不要询问）\n");
         prompt.append("- 当 confidence >= 0.6 时立即保存特质\n");
         prompt.append("- 当话题聊得足够深入，调用 markTopicCovered 标记\n");
+        prompt.append("- 不要试图一次性保存所有22个特质，只保存你有明确证据的那几个\n");
+        prompt.append("- 如果你对一个特质没有足够了解，宁可跳过也不要猜测\n");
         prompt.append("- 特质值范围 0.0-1.0\n\n");
 
         prompt.append("## 访谈维度\n");

@@ -35,7 +35,15 @@ public class OnboardingTools {
 
     // ── Trait save helpers ──
 
+    private static final BigDecimal MIN_CONFIDENCE = new BigDecimal("0.5");
+
     private void upsertTrait(String traitName, BigDecimal value, BigDecimal confidence, String reason) {
+        if (confidence.compareTo(MIN_CONFIDENCE) < 0) {
+            log.info("[OnboardingTools] upsertTrait SKIPPED (low confidence) userId={} trait={} confidence={}",
+                    userId, traitName, confidence);
+            return;
+        }
+
         userTraitRepository.findByProfileIdAndTraitName(profileId, traitName)
                 .ifPresent(userTraitRepository::delete);
 
