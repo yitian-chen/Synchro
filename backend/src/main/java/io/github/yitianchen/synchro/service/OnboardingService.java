@@ -428,6 +428,17 @@ public class OnboardingService {
         prompt.append("AI 已生成: ").append(filledAiTarget.isEmpty() ? "无" : String.join(", ", filledAiTarget)).append("\n");
         prompt.append("AI 待生成: ").append(unfilledAiTarget.isEmpty() ? "无" : String.join(", ", unfilledAiTarget)).append("\n\n");
 
+        prompt.append("## 工具调用格式\n");
+        prompt.append("当你需要调用工具时，在回复中使用 ```tool_call 代码块，格式为：\n");
+        prompt.append("```tool_call\n");
+        prompt.append("{\"name\": \"工具名\", \"arguments\": {\"参数名\": \"值\"}}\n");
+        prompt.append("```\n");
+        prompt.append("例如要保存一个特质：\n");
+        prompt.append("```tool_call\n");
+        prompt.append("{\"name\": \"savePersonalityTrait\", \"arguments\": {\"traitName\": \"extroversion\", \"value\": 0.8, \"confidence\": 0.9, \"reason\": \"用户说自己是外向性格\"}}\n");
+        prompt.append("```\n");
+        prompt.append("工具调用在后台执行，用户看不到。可以在回复中混合文字和多个工具调用。\n\n");
+
         prompt.append("## 访谈风格\n");
         prompt.append("- 像和朋友微信聊天一样轻松自然\n");
         prompt.append("- 一次只问一个问题\n");

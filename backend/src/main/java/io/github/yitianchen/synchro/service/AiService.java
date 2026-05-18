@@ -2,16 +2,13 @@ package io.github.yitianchen.synchro.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.request.ToolChoice;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -115,8 +113,16 @@ public class AiService {
         return responseText;
     }
 
-    // ── Native tool calling (function calling via API) ──
+    // ── Prompt-based tool calling (model-agnostic, works without native function calling) ──
 
+    private static final Pattern TOOL_CALL_PATTERN =
+            Pattern.compile("```tool_call\\s*\\n(\\{.*?})\\s*```", Pattern.DOTALL);
+
+    /**
+     * Chat with prompt-based tool calling. Tools are NOT sent via API function calling;
+     * the model is instructed to output {@code ```tool_call} code blocks in its response.
+     * Works with any LLM regardless of native function calling support.
+     */
     public AiMessage chatWithTools(
             List<ChatMessage> messages,
             List<ToolSpecification> toolSpecifications,
@@ -126,13 +132,8 @@ public class AiService {
         AiMessage aiMessage = null;
 
         for (int loop = 0; loop < 5; loop++) {
-            // DeepSeek 不支持 tool_choice=required，只能用 auto
-            ToolChoice choice = ToolChoice.AUTO;
-
             ChatRequest request = ChatRequest.builder()
                     .messages(mutableMessages)
-                    .toolSpecifications(toolSpecifications)
-                    .toolChoice(choice)
                     .build();
 
             log.info("[AiService] chatWithTools - loop {} calling chatModel, {} messages, {} tools",
@@ -144,29 +145,64 @@ public class AiService {
 
             ChatResponse response = chatModel.chat(request);
             aiMessage = response.aiMessage();
+            String rawText = aiMessage.text();
+            if (rawText == null) rawText = "";
 
-            log.info("[AiService] chatWithTools - hasToolCalls={} finishReason={} textLen={}",
-                    aiMessage.hasToolExecutionRequests(),
-                    response.finishReason(),
-                    aiMessage.text() != null ? aiMessage.text().length() : 0);
+            log.info("[AiService] chatWithTools - response textLen={} finishReason={}",
+                    rawText.length(), response.finishReason());
 
-            if (!aiMessage.hasToolExecutionRequests()) {
-                log.info("[AiService] chatWithTools - no tool requests, returning text.");
-                return aiMessage;
+            var result = parseAndExecuteToolCalls(rawText, tools);
+
+            if (result.toolCalls().isEmpty()) {
+                log.info("[AiService] chatWithTools - no tool calls found, returning text.");
+                return AiMessage.from(result.cleanText());
             }
 
-            log.info("[AiService] chatWithTools - {} tool execution requests", aiMessage.toolExecutionRequests().size());
+            log.info("[AiService] chatWithTools - {} tool calls executed: {}",
+                    result.toolCalls().size(),
+                    result.toolCalls().stream().map(tc -> tc.name).toList());
 
-            mutableMessages.add(aiMessage);
-
-            for (ToolExecutionRequest toolRequest : aiMessage.toolExecutionRequests()) {
-                String result = executeToolCall(toolRequest, tools);
-                mutableMessages.add(ToolExecutionResultMessage.from(toolRequest, result));
+            StringBuilder toolResultText = new StringBuilder();
+            for (var tc : result.toolCalls()) {
+                toolResultText.append("- ").append(tc.name).append(": ").append(tc.result).append("\n");
             }
+
+            mutableMessages.add(AiMessage.from(result.cleanText()));
+            mutableMessages.add(SystemMessage.from(
+                    "[系统提示] 以下工具已在后台执行完成：\n" + toolResultText +
+                    "请继续对话，不要再重复调用已成功的工具。"));
         }
 
         log.warn("[AiService] chatWithTools - max tool loop iterations reached");
         return aiMessage;
+    }
+
+    private record ToolCallParseResult(String cleanText, List<ToolCall> toolCalls) {}
+
+    private record ToolCall(String name, String result) {}
+
+    private ToolCallParseResult parseAndExecuteToolCalls(String rawText, OnboardingTools tools) {
+        var matcher = TOOL_CALL_PATTERN.matcher(rawText);
+        var toolCalls = new ArrayList<ToolCall>();
+
+        while (matcher.find()) {
+            String jsonStr = matcher.group(1);
+            log.info("[AiService] parseAndExecuteToolCalls - found tool_call: {}", sanitizeForDebug(jsonStr));
+            try {
+                JsonNode call = objectMapper.readTree(jsonStr);
+                String name = call.get("name").asText();
+                JsonNode args = call.get("arguments");
+                if (args == null) args = objectMapper.createObjectNode();
+
+                toolCalls.add(new ToolCall(name, executeToolCall(name, args, tools)));
+            } catch (Exception e) {
+                log.warn("[AiService] parseAndExecuteToolCalls - failed: {}", e.getMessage());
+                toolCalls.add(new ToolCall("parse_error", "Failed: " + e.getMessage()));
+            }
+        }
+
+        String cleanText = TOOL_CALL_PATTERN.matcher(rawText).replaceAll("").trim();
+        return new ToolCallParseResult(cleanText, toolCalls);
     }
 
     public List<ChatMessage> buildStructuredMessages(
@@ -195,12 +231,10 @@ public class AiService {
 
     // ── Tool dispatch ──
 
-    private String executeToolCall(ToolExecutionRequest request, OnboardingTools tools) {
-        String toolName = request.name();
-        log.info("[AiService] executeToolCall - tool={} args={}", toolName, sanitizeForDebug(request.arguments()));
+    private String executeToolCall(String toolName, JsonNode args, OnboardingTools tools) {
+        log.info("[AiService] executeToolCall - tool={} args={}", toolName, sanitizeForDebug(args.toString()));
 
         try {
-            JsonNode args = objectMapper.readTree(request.arguments());
             return switch (toolName) {
                 case "savePersonalityTrait" -> {
                     tools.savePersonalityTrait(
