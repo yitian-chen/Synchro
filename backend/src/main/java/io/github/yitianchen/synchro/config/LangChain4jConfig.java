@@ -40,6 +40,8 @@ public class LangChain4jConfig {
                 .baseUrl(baseUrl)
                 .temperature(0.1)
                 .timeout(java.time.Duration.ofSeconds(60))
+                .returnThinking(false)
+                .sendThinking(true)
                 .logRequests(true)
                 .logResponses(true)
                 .build();
@@ -53,6 +55,8 @@ public class LangChain4jConfig {
                 .baseUrl(baseUrl)
                 .temperature(0.1)
                 .timeout(java.time.Duration.ofSeconds(60))
+                .returnThinking(false)
+                .sendThinking(true)
                 .build();
     }
 

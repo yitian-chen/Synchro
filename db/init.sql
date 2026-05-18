@@ -37,6 +37,7 @@ CREATE TABLE profiles (
     traits_summary JSON,
     ideal_partner_description TEXT,
     matching_preference VARCHAR(20) DEFAULT 'BALANCED',
+    post_onboarding_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

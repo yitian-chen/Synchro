@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+//TODO: 引入RAG做匹配理由解释(把 match 记录、双方特质、对话摘要向量化，让 AI 检索后给出个性化的匹配原因)；引入multi-agent
+
 @RestController
 @RequestMapping("/api/matches")
 @RequiredArgsConstructor
