@@ -1,10 +1,15 @@
 package io.github.yitianchen.synchro.controller;
 
+import io.github.yitianchen.synchro.dto.request.MatchAskRequest;
+import io.github.yitianchen.synchro.dto.response.MatchAskResponse;
 import io.github.yitianchen.synchro.dto.response.MatchResponse;
 import io.github.yitianchen.synchro.model.Match;
 import io.github.yitianchen.synchro.model.User;
+import io.github.yitianchen.synchro.repository.MatchRepository;
 import io.github.yitianchen.synchro.repository.UserRepository;
 import io.github.yitianchen.synchro.service.MatchingService;
+import io.github.yitianchen.synchro.service.RagService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-//TODO: 引入RAG做匹配理由解释(把 match 记录、双方特质、对话摘要向量化，让 AI 检索后给出个性化的匹配原因)；引入multi-agent
-
 @RestController
 @RequestMapping("/api/matches")
 @RequiredArgsConstructor
@@ -23,6 +26,8 @@ public class MatchController {
 
     private final MatchingService matchingService;
     private final UserRepository userRepository;
+    private final MatchRepository matchRepository;
+    private final RagService ragService;
 
     @GetMapping("/current")
     public ResponseEntity<MatchResponse> getCurrentMatch(@AuthenticationPrincipal Long userId) {
@@ -57,5 +62,21 @@ public class MatchController {
         // For testing purposes - trigger matching manually
         matchingService.executeWeeklyMatching();
         return ResponseEntity.ok(Map.of("message", "Matching triggered successfully"));
+    }
+
+    @PostMapping("/{matchId}/ask")
+    public ResponseEntity<?> askAboutMatch(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long matchId,
+            @Valid @RequestBody MatchAskRequest request) {
+        Match match = matchRepository.findById(matchId).orElseThrow(() ->
+                new IllegalArgumentException("Match not found: " + matchId));
+
+        if (!match.getUser1Id().equals(userId) && !match.getUser2Id().equals(userId)) {
+            return ResponseEntity.status(403).body(Map.of("message", "无权访问此匹配"));
+        }
+
+        String answer = ragService.answerMatchQuestion(userId, matchId, request.question());
+        return ResponseEntity.ok(new MatchAskResponse(answer));
     }
 }

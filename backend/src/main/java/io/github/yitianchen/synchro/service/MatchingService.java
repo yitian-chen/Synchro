@@ -105,7 +105,8 @@ public class MatchingService {
             }
 
             if (bestMatch != null) {
-                Match match = createMatch(user, bestMatch, thisFriday, bestScore);
+                MatchDetail detail = calculateMatchDetail(user.getId(), bestMatch.getId());
+                Match match = createMatch(user, bestMatch, thisFriday, detail);
                 createdMatches.add(match);
                 matchedUsers.add(user.getId());
                 matchedUsers.add(bestMatch.getId());
@@ -118,6 +119,10 @@ public class MatchingService {
     }
 
     public double calculateCompatibilityScore(Long userId1, Long userId2) {
+        return calculateMatchDetail(userId1, userId2).totalScore();
+    }
+
+    private MatchDetail calculateMatchDetail(Long userId1, Long userId2) {
         double traitSim = calculateTraitSimilarity(userId1, userId2);
         double semanticSim = embeddingService.calculateSemanticSimilarity(userId1, userId2);
         double prefMatch = calculatePreferenceMatch(userId1, userId2);
@@ -147,7 +152,19 @@ public class MatchingService {
                 String.format("%.4f", idealPartnerScore),
                 String.format("%.4f", totalScore));
 
-        return totalScore;
+        return new MatchDetail(traitSim, semanticSim, prefMatch, complementarity, idealPartnerScore, totalScore);
+    }
+
+    private record MatchDetail(double traitSimilarity, double semanticSimilarity,
+                                double preferenceMatch, double complementarity,
+                                double idealPartnerMatch, double totalScore) {}
+
+    private String toMatchReasonJson(MatchDetail detail) {
+        return String.format(
+                "{\"traitSimilarity\":%.4f,\"semanticSimilarity\":%.4f,\"preferenceMatch\":%.4f,\"complementarity\":%.4f,\"idealPartnerMatch\":%.4f,\"totalScore\":%.4f}",
+                detail.traitSimilarity(), detail.semanticSimilarity(),
+                detail.preferenceMatch(), detail.complementarity(),
+                detail.idealPartnerMatch(), detail.totalScore());
     }
 
     /**
@@ -310,12 +327,13 @@ public class MatchingService {
     }
 
     @Transactional
-    public Match createMatch(User user1, User user2, LocalDate matchWeek, double score) {
+    public Match createMatch(User user1, User user2, LocalDate matchWeek, MatchDetail detail) {
         Match match = new Match();
         match.setUser1Id(user1.getId());
         match.setUser2Id(user2.getId());
         match.setMatchWeek(matchWeek);
-        match.setCompatibilityScore(BigDecimal.valueOf(score));
+        match.setCompatibilityScore(BigDecimal.valueOf(detail.totalScore()));
+        match.setMatchReason(toMatchReasonJson(detail));
         match.setStatus(Match.MatchStatus.PENDING);
 
         return matchRepository.save(match);

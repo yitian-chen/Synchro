@@ -78,8 +78,13 @@ export interface Match {
   user2AvatarUrl?: string;
   matchWeek: string;
   compatibilityScore: number;
+  matchReason?: string;
   status: 'PENDING' | 'ACTIVE' | 'EXPIRED' | 'REMATCHED';
   createdAt: string;
+}
+
+export interface MatchAskResponse {
+  answer: string;
 }
 
 export interface Conversation {

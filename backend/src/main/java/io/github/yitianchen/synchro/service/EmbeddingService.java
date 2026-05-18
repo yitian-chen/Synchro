@@ -4,11 +4,10 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.data.embedding.Embedding;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -133,6 +132,47 @@ public class EmbeddingService {
         }
 
         return (match1 + match2) / 2.0;
+    }
+
+    // ── Generic document embedding (RAG knowledge base) ──
+
+    private static final String DOC_KEY_PREFIX = "rag:doc:";
+
+    public void saveDocEmbedding(String docId, String text) {
+        String key = DOC_KEY_PREFIX + docId;
+        float[] embedding = embedText(text);
+        redisTemplate.opsForHash().put(key, "text", text);
+        redisTemplate.opsForHash().put(key, "embedding", serializeVector(embedding));
+        log.info("[EmbeddingService] Saved doc embedding: {}", docId);
+    }
+
+    public float[] getDocEmbedding(String docId) {
+        String key = DOC_KEY_PREFIX + docId;
+        Object embeddingObj = redisTemplate.opsForHash().get(key, "embedding");
+        if (embeddingObj == null) return null;
+        return deserializeVector(embeddingObj);
+    }
+
+    public String getDocText(String docId) {
+        String key = DOC_KEY_PREFIX + docId;
+        return (String) redisTemplate.opsForHash().get(key, "text");
+    }
+
+    public record DocEntry(String docId, String text, float[] embedding) {}
+
+    public List<DocEntry> getAllDocs(String keyPattern) {
+        List<DocEntry> docs = new ArrayList<>();
+        Set<String> keys = redisTemplate.keys(keyPattern);
+        if (keys == null) return docs;
+        for (String key : keys) {
+            String docId = key.substring(DOC_KEY_PREFIX.length());
+            float[] embedding = getDocEmbedding(docId);
+            String text = getDocText(docId);
+            if (embedding != null && text != null) {
+                docs.add(new DocEntry(docId, text, embedding));
+            }
+        }
+        return docs;
     }
 
     private String serializeVector(float[] vector) {

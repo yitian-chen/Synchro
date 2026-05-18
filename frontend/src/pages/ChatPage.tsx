@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { chatApi } from '../api/chat';
+import { matchesApi } from '../api/matches';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import type { ChatMessage } from '../types';
@@ -14,6 +15,11 @@ const ChatPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [participantName, setParticipantName] = useState<string>('');
+  const [matchId, setMatchId] = useState<number | null>(null);
+  const [showAdvisor, setShowAdvisor] = useState(false);
+  const [ragQuestion, setRagQuestion] = useState('');
+  const [ragAnswer, setRagAnswer] = useState('');
+  const [ragLoading, setRagLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const stompClientRef = useRef<Stomp.Client | null>(null);
   const navigate = useNavigate();
@@ -57,8 +63,9 @@ const ChatPage: React.FC = () => {
     try {
       const convs = await chatApi.getConversations();
       const conv = convs.find((c) => c.id === Number(conversationId));
-      if (conv?.participantNickname) {
-        setParticipantName(conv.participantNickname);
+      if (conv) {
+        if (conv.participantNickname) setParticipantName(conv.participantNickname);
+        if (conv.matchId) setMatchId(conv.matchId);
       }
     } catch (err) {
       console.error('Failed to load conversation info:', err);
@@ -120,6 +127,21 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  const handleAskAdvisor = async (question: string) => {
+    if (!matchId || ragLoading) return;
+    setRagLoading(true);
+    setRagAnswer('');
+    try {
+      const response = await matchesApi.askAboutMatch(matchId, question);
+      setRagAnswer(response.answer);
+    } catch (err) {
+      console.error('Failed to ask advisor:', err);
+      setRagAnswer('抱歉，暂时无法获取回答，请稍后再试。');
+    } finally {
+      setRagLoading(false);
+    }
+  };
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       <header className="gradient-bg p-4 flex items-center">
@@ -132,6 +154,17 @@ const ChatPage: React.FC = () => {
             {isConnected ? '在线' : '连接中...'}
           </span>
         </div>
+        {matchId && (
+          <button
+            onClick={() => setShowAdvisor(!showAdvisor)}
+            className={`text-white text-sm px-3 py-1.5 rounded-full transition-colors ${
+              showAdvisor ? 'bg-white/20' : 'bg-white/10 hover:bg-white/20'
+            }`}
+            title="AI匹配顾问"
+          >
+            💡 AI顾问
+          </button>
+        )}
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 max-w-2xl mx-auto w-full">
@@ -165,6 +198,90 @@ const ChatPage: React.FC = () => {
         })}
         <div ref={messagesEndRef} />
       </div>
+
+      {showAdvisor && matchId && (
+        <div className="bg-white border-t shadow-inner">
+          <div className="max-w-2xl mx-auto p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">AI 匹配顾问</h3>
+              <button
+                onClick={() => setShowAdvisor(false)}
+                className="text-gray-400 hover:text-gray-600 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick questions */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button
+                onClick={() => {
+                  setRagQuestion('为什么我们被匹配到一起了？');
+                  handleAskAdvisor('为什么我们被匹配到一起了？');
+                }}
+                disabled={ragLoading}
+                className="text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-full hover:bg-primary/20 disabled:opacity-50"
+              >
+                为什么匹配到TA？
+              </button>
+              <button
+                onClick={() => {
+                  setRagQuestion('如何开启话题破冰？');
+                  handleAskAdvisor('如何开启话题破冰？');
+                }}
+                disabled={ragLoading}
+                className="text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-full hover:bg-primary/20 disabled:opacity-50"
+              >
+                如何开启话题？
+              </button>
+            </div>
+
+            {/* Custom question input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (ragQuestion.trim()) handleAskAdvisor(ragQuestion.trim());
+              }}
+              className="flex gap-2 mb-3"
+            >
+              <input
+                type="text"
+                value={ragQuestion}
+                onChange={(e) => setRagQuestion(e.target.value)}
+                placeholder="输入你的问题..."
+                className="flex-1 px-3 py-1.5 border rounded-full text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                disabled={ragLoading}
+              />
+              <button
+                type="submit"
+                disabled={ragLoading || !ragQuestion.trim()}
+                className="px-4 py-1.5 bg-primary text-white rounded-full text-sm hover:opacity-90 disabled:opacity-50"
+              >
+                发送
+              </button>
+            </form>
+
+            {/* Answer display */}
+            {ragLoading && (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
+                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                AI正在分析匹配数据...
+              </div>
+            )}
+            {ragAnswer && !ragLoading && (
+              <div className="bg-gray-50 rounded-xl p-4 text-sm">
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                  }}
+                >
+                  {ragAnswer}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSend} className="p-4 bg-white border-t">
         <div className="flex space-x-2 max-w-2xl mx-auto">
