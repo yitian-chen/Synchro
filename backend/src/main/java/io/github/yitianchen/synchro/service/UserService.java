@@ -133,6 +133,7 @@ public class UserService {
                 .status(user.getStatus())
                 .onboardingCompleted(user.isOnboardingCompleted())
                 .matchingOptIn(user.isMatchingOptIn())
+                .postOnboardingCompleted(profile.isPostOnboardingCompleted())
                 .bio(profile.getBio())
                 .age(profile.getAge())
                 .gender(profile.getGender())

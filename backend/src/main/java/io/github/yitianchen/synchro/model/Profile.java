@@ -43,6 +43,9 @@ public class Profile {
     @Enumerated(EnumType.STRING)
     private MatchingPreference matchingPreference = MatchingPreference.BALANCED;
 
+    @Column(name = "post_onboarding_completed")
+    private boolean postOnboardingCompleted = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

@@ -20,6 +20,7 @@ public class UserProfileResponse {
     private User.UserStatus status;
     private boolean onboardingCompleted;
     private boolean matchingOptIn;
+    private boolean postOnboardingCompleted;
 
     // Profile fields
     private String bio;

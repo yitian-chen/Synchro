@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
 import ChatListPage from './pages/ChatListPage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
+import PostOnboardingPage from './pages/PostOnboardingPage';
 import EditProfilePage from './pages/EditProfilePage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -74,6 +75,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <ChatListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/post-onboarding"
+        element={
+          <ProtectedRoute>
+            <PostOnboardingPage />
           </ProtectedRoute>
         }
       />

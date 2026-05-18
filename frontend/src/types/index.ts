@@ -33,6 +33,7 @@ export interface Profile {
   traitsSummary?: string;
   idealPartnerDescription?: string;
   matchingPreference?: 'SIMILAR' | 'COMPLEMENTARY' | 'BALANCED';
+  postOnboardingCompleted?: boolean;
 }
 
 export interface Province {

@@ -219,18 +219,6 @@ public class AiService {
                             args.has("reason") ? args.get("reason").asText() : "");
                     yield "Saved partner preference: " + args.get("traitName").asText();
                 }
-                case "setProfileAge" -> {
-                    tools.setProfileAge(args.get("age").asInt());
-                    yield "Profile age set to " + args.get("age").asInt();
-                }
-                case "setProfileGender" -> {
-                    tools.setProfileGender(args.get("gender").asText());
-                    yield "Profile gender set to " + args.get("gender").asText();
-                }
-                case "setProfileLocation" -> {
-                    tools.setProfileLocation(args.get("location").asText());
-                    yield "Profile location set to " + args.get("location").asText();
-                }
                 case "setProfileBio" -> {
                     tools.setProfileBio(args.get("bio").asText());
                     yield "Profile bio updated.";

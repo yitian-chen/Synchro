@@ -2,10 +2,7 @@ package io.github.yitianchen.synchro.service;
 
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
-import io.github.yitianchen.synchro.model.City;
-import io.github.yitianchen.synchro.model.Profile;
 import io.github.yitianchen.synchro.model.UserTrait;
-import io.github.yitianchen.synchro.repository.CityRepository;
 import io.github.yitianchen.synchro.repository.ProfileRepository;
 import io.github.yitianchen.synchro.repository.UserTraitRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +10,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.List;
 
 @Slf4j
 public class OnboardingTools {
@@ -23,20 +19,17 @@ public class OnboardingTools {
     private final Long messageId;
     private final ProfileRepository profileRepository;
     private final UserTraitRepository userTraitRepository;
-    private final CityRepository cityRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     public OnboardingTools(Long userId, Long profileId, Long messageId,
                            ProfileRepository profileRepository,
                            UserTraitRepository userTraitRepository,
-                           CityRepository cityRepository,
                            RedisTemplate<String, Object> redisTemplate) {
         this.userId = userId;
         this.profileId = profileId;
         this.messageId = messageId;
         this.profileRepository = profileRepository;
         this.userTraitRepository = userTraitRepository;
-        this.cityRepository = cityRepository;
         this.redisTemplate = redisTemplate;
     }
 
@@ -76,48 +69,6 @@ public class OnboardingTools {
             @P("Confidence from 0.0 to 1.0") double confidence,
             @P("Evidence from the user's response") String reason) {
         upsertTrait(traitName, BigDecimal.valueOf(value), BigDecimal.valueOf(confidence), reason);
-    }
-
-    @Tool("Auto-fill the user's age in their profile")
-    public void setProfileAge(@P("User age in years") int age) {
-        profileRepository.findById(profileId).ifPresent(profile -> {
-            profile.setAge(age);
-            profileRepository.save(profile);
-            log.info("[OnboardingTools] setProfileAge userId={} age={}", userId, age);
-        });
-    }
-
-    @Tool("Auto-fill the user's gender. Value must be MALE, FEMALE, or OTHER")
-    public void setProfileGender(@P("Gender value") String gender) {
-        try {
-            Profile.Gender g = Profile.Gender.valueOf(gender.toUpperCase());
-            profileRepository.findById(profileId).ifPresent(profile -> {
-                profile.setGender(g);
-                profileRepository.save(profile);
-                log.info("[OnboardingTools] setProfileGender userId={} gender={}", userId, g);
-            });
-        } catch (IllegalArgumentException e) {
-            log.warn("[OnboardingTools] setProfileGender invalid gender: {}", gender);
-        }
-    }
-
-    @Tool("Auto-fill the user's city/location. Provide the city name in Chinese")
-    public void setProfileLocation(@P("City name in Chinese") String location) {
-        profileRepository.findById(profileId).ifPresent(profile -> {
-            profile.setLocation(location);
-
-            List<City> cities = cityRepository.findAll();
-            for (City city : cities) {
-                if (city.getName().contains(location) || location.contains(city.getName())) {
-                    profile.setCityId(city.getId());
-                    log.info("[OnboardingTools] setProfileLocation matched city: {} -> {}", location, city.getName());
-                    break;
-                }
-            }
-
-            profileRepository.save(profile);
-            log.info("[OnboardingTools] setProfileLocation userId={} location={}", userId, location);
-        });
     }
 
     @Tool("Auto-generate a bio summary (2-4 Chinese sentences) based on what you have learned about the user")

@@ -13,7 +13,6 @@ import io.github.yitianchen.synchro.model.Message;
 import io.github.yitianchen.synchro.model.Profile;
 import io.github.yitianchen.synchro.model.User;
 import io.github.yitianchen.synchro.model.UserTrait;
-import io.github.yitianchen.synchro.repository.CityRepository;
 import io.github.yitianchen.synchro.repository.ConversationRepository;
 import io.github.yitianchen.synchro.repository.MessageRepository;
 import io.github.yitianchen.synchro.repository.ProfileRepository;
@@ -42,7 +41,6 @@ public class OnboardingService {
     private final MessageRepository messageRepository;
     private final ProfileRepository profileRepository;
     private final UserTraitRepository userTraitRepository;
-    private final CityRepository cityRepository;
     private final AiService aiService;
     private final TraitExtractionService traitExtractionService;
     private final ObjectMapper objectMapper;
@@ -100,7 +98,7 @@ public class OnboardingService {
 
             OnboardingTools tools = new OnboardingTools(
                     userId, profile.getId(), null,
-                    profileRepository, userTraitRepository, cityRepository, redisTemplate);
+                    profileRepository, userTraitRepository, redisTemplate);
 
             List<ToolSpecification> specs = ToolSpecifications.toolSpecificationsFrom(tools);
             List<ChatMessage> messages = aiService.buildStructuredMessages(systemPrompt, List.of(), "Hello");
@@ -206,7 +204,7 @@ public class OnboardingService {
         // 8. Create tools + specs
         OnboardingTools tools = new OnboardingTools(
                 userId, profile.getId(), userMessage.getId(),
-                profileRepository, userTraitRepository, cityRepository, redisTemplate);
+                profileRepository, userTraitRepository, redisTemplate);
 
         List<ToolSpecification> specs = ToolSpecifications.toolSpecificationsFrom(tools);
 
@@ -292,7 +290,7 @@ public class OnboardingService {
         userRepository.save(user);
 
         OnboardingResponse response = buildOnboardingResponse(conversation, history);
-        response.setRedirectUrl("/dashboard");
+        response.setRedirectUrl("/post-onboarding");
         return response;
     }
 
@@ -361,21 +359,20 @@ public class OnboardingService {
 
         // Read existing profile fields
         Profile profile = profileRepository.findById(profileId).orElse(null);
-        List<String> filledFields = new ArrayList<>();
-        List<String> unfilledFields = new ArrayList<>();
+        List<String> filledLocked = new ArrayList<>();
+        List<String> filledAiTarget = new ArrayList<>();
+        List<String> unfilledAiTarget = new ArrayList<>();
 
-        for (String field : List.of("age", "gender", "location", "bio", "idealPartnerDescription")) {
-            boolean filled = switch (field) {
-                case "age" -> profile != null && profile.getAge() != null;
-                case "gender" -> profile != null && profile.getGender() != null;
-                case "location" -> profile != null && profile.getLocation() != null && !profile.getLocation().isBlank();
-                case "bio" -> profile != null && profile.getBio() != null && !profile.getBio().isBlank();
-                case "idealPartnerDescription" -> profile != null && profile.getIdealPartnerDescription() != null && !profile.getIdealPartnerDescription().isBlank();
-                default -> false;
-            };
-            if (filled) filledFields.add(field);
-            else unfilledFields.add(field);
-        }
+        // age/gender/location are locked (pre-filled by user before interview)
+        if (profile != null && profile.getAge() != null) filledLocked.add("age");
+        if (profile != null && profile.getGender() != null) filledLocked.add("gender");
+        if (profile != null && profile.getLocation() != null && !profile.getLocation().isBlank()) filledLocked.add("location");
+
+        // bio/idealPartnerDescription are targets for AI auto-generation
+        boolean bioFilled = profile != null && profile.getBio() != null && !profile.getBio().isBlank();
+        boolean idealFilled = profile != null && profile.getIdealPartnerDescription() != null && !profile.getIdealPartnerDescription().isBlank();
+        if (bioFilled) filledAiTarget.add("bio"); else unfilledAiTarget.add("bio");
+        if (idealFilled) filledAiTarget.add("idealPartnerDescription"); else unfilledAiTarget.add("idealPartnerDescription");
 
         // Build topic status lines
         StringBuilder topicLines = new StringBuilder();
@@ -403,15 +400,16 @@ public class OnboardingService {
         prompt.append("## 工具\n");
         prompt.append("你可以随时调用以下工具，这些操作在后台执行，用户看不到：\n");
         prompt.append("- savePersonalityTrait / savePartnerPreference：实时保存你从用户回答中推断出的特质\n");
-        prompt.append("- setProfileAge / setProfileGender / setProfileLocation / setProfileBio / setIdealPartnerDescription：自动填充档案\n");
+        prompt.append("- setProfileBio / setIdealPartnerDescription：在对话中为用户生成自我介绍和理想伴侣描述\n");
         prompt.append("- markTopicCovered：标记某个话题已充分了解，之后不要再问\n\n");
 
         prompt.append("## 工具使用规则\n");
         prompt.append("1. 当 confidence >= 0.6 时立即保存特质，不要等待对话结束\n");
-        prompt.append("2. 当用户透露个人信息（年龄、性别、城市），立即调用档案填充工具\n");
-        prompt.append("3. 当某个维度已聊得足够深入，调用 markTopicCovered 标记\n");
-        prompt.append("4. 不要在对话中提到你调用了什么工具\n");
-        prompt.append("5. 特质值范围 0.0-1.0\n\n");
+        prompt.append("2. 用户已在注册后填写了年龄、性别、所在地，这些字段已锁定，不允许查询或修改\n");
+        prompt.append("3. 对话中可为用户生成自我介绍（setProfileBio）和理想伴侣描述（setIdealPartnerDescription）\n");
+        prompt.append("4. 当某个维度已聊得足够深入，调用 markTopicCovered 标记\n");
+        prompt.append("5. 不要在对话中提到你调用了什么工具\n");
+        prompt.append("6. 特质值范围 0.0-1.0\n\n");
 
         prompt.append("## 访谈维度\n");
         prompt.append(topicLines).append("\n");
@@ -426,8 +424,9 @@ public class OnboardingService {
         }
 
         prompt.append("## 档案填充状态\n");
-        prompt.append("已填充: ").append(filledFields.isEmpty() ? "无" : String.join(", ", filledFields)).append("\n");
-        prompt.append("未填充: ").append(unfilledFields.isEmpty() ? "无" : String.join(", ", unfilledFields)).append("\n\n");
+        prompt.append("已锁定（用户预填，不可修改）: ").append(filledLocked.isEmpty() ? "无" : String.join(", ", filledLocked)).append("\n");
+        prompt.append("AI 已生成: ").append(filledAiTarget.isEmpty() ? "无" : String.join(", ", filledAiTarget)).append("\n");
+        prompt.append("AI 待生成: ").append(unfilledAiTarget.isEmpty() ? "无" : String.join(", ", unfilledAiTarget)).append("\n\n");
 
         prompt.append("## 访谈风格\n");
         prompt.append("- 像和朋友微信聊天一样轻松自然\n");

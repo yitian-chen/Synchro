@@ -6,54 +6,26 @@ import LocationPicker from '../components/LocationPicker';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
-const OnboardingInviteModal: React.FC<{
-  onAccept: () => void;
-  onDecline: () => void;
-}> = ({ onAccept, onDecline }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="card w-full max-w-sm mx-4">
-      <h2 className="text-xl font-heading font-bold text-center mb-2">开始了解你自己</h2>
-      <p className="text-gray-500 text-sm text-center mb-6">
-        通过一段简短的 AI 访谈，我们能更精准地为你匹配志同道合的人。只需几分钟。
-      </p>
-      <button onClick={onAccept} className="btn-primary w-full mb-3">
-        立即开始访谈
-      </button>
-      <button
-        onClick={onDecline}
-        className="w-full py-2 text-sm text-gray-500 hover:text-gray-700"
-      >
-        稍后再说
-      </button>
-    </div>
-  </div>
-);
-
 const ProfileSetupPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [bio, setBio] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
   const [location, setLocation] = useState('');
   const [cityId, setCityId] = useState<number | undefined>();
-  const [idealPartnerDescription, setIdealPartnerDescription] = useState('');
-  const [matchingPreference, setMatchingPreference] = useState<'SIMILAR' | 'COMPLEMENTARY' | 'BALANCED'>('BALANCED');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const checkProfile = async () => {
       try {
         const profile = await userApi.getProfile();
         const needsSetup =
-          profile.bio == null &&
           profile.age == null &&
           profile.gender == null &&
-          profile.location == null;
+          profile.cityId == null;
 
         if (!needsSetup) {
           if (user?.status === 'PENDING_ONBOARDING' || !user?.onboardingCompleted) {
@@ -74,11 +46,6 @@ const ProfileSetupPage: React.FC = () => {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!bio.trim()) {
-      newErrors.bio = '请填写自我介绍';
-    } else if (bio.length > 500) {
-      newErrors.bio = '自我介绍不超过 500 字';
-    }
     if (!age) {
       newErrors.age = '请填写年龄';
     } else {
@@ -88,9 +55,7 @@ const ProfileSetupPage: React.FC = () => {
       }
     }
     if (!gender) newErrors.gender = '请选择性别';
-    if (!cityId) {
-      newErrors.location = '请选择所在地';
-    }
+    if (!cityId) newErrors.location = '请选择所在地';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -102,15 +67,12 @@ const ProfileSetupPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await userApi.updateProfile({
-        bio: bio.trim(),
         age: parseInt(age, 10),
         gender: gender as Gender,
         location: location.trim(),
         cityId,
-        idealPartnerDescription: idealPartnerDescription.trim() || undefined,
-        matchingPreference,
       });
-      setShowModal(true);
+      navigate('/onboarding');
     } catch (err) {
       console.error('Failed to update profile:', err);
       setErrors({ submit: '保存失败，请稍后重试' });
@@ -131,8 +93,8 @@ const ProfileSetupPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="gradient-bg p-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-heading font-bold text-white">完善个人信息</h1>
-          <p className="text-sm text-white opacity-80">让大家更好地了解你</p>
+          <h1 className="text-xl font-heading font-bold text-white">完善基本信息</h1>
+          <p className="text-sm text-white opacity-80">完善基础资料，然后开始 AI 访谈</p>
         </div>
         <button onClick={logout} className="text-white text-sm hover:underline">
           退出
@@ -142,28 +104,6 @@ const ProfileSetupPage: React.FC = () => {
       <div className="flex-1 flex items-start justify-center p-4 pt-8">
         <div className="card w-full max-w-md">
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                自我介绍 <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={3}
-                maxLength={500}
-                placeholder="简单介绍一下自己..."
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none"
-              />
-              <div className="flex justify-between mt-1">
-                {errors.bio ? (
-                  <p className="text-red-500 text-xs">{errors.bio}</p>
-                ) : (
-                  <span />
-                )}
-                <span className="text-xs text-gray-400">{bio.length}/500</span>
-              </div>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 年龄 <span className="text-red-500">*</span>
@@ -211,72 +151,20 @@ const ProfileSetupPage: React.FC = () => {
               error={errors.location}
             />
 
-            {/* 意向对象描述 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                你理想中的伴侣是什么样的人？
-              </label>
-              <textarea
-                value={idealPartnerDescription}
-                onChange={(e) => setIdealPartnerDescription(e.target.value)}
-                rows={4}
-                placeholder="描述你理想中的伴侣的性格、生活方式、价值观等..."
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none"
-              />
-              <div className="flex justify-between mt-1">
-                {errors.idealPartnerDescription ? (
-                  <p className="text-red-500 text-xs">{errors.idealPartnerDescription}</p>
-                ) : (
-                  <span />
-                )}
-                <span className="text-xs text-gray-400">{idealPartnerDescription.length}/1000</span>
-              </div>
-            </div>
-
-            {/* 匹配偏好 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                你希望对方和你？
-              </label>
-              <div className="flex gap-3">
-                {[
-                  { value: 'SIMILAR' as const, label: '更相似' },
-                  { value: 'COMPLEMENTARY' as const, label: '更互补' },
-                  { value: 'BALANCED' as const, label: '都可以' },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setMatchingPreference(opt.value)}
-                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                      matchingPreference === opt.value
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-gray-600 border-gray-300 hover:border-primary'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className="text-xs text-gray-400">
+              这些信息将不可被 AI 修改，请如实填写。自我介绍和择偶偏好将在 AI 访谈后填写。
+            </p>
 
             {errors.submit && (
               <p className="text-red-500 text-sm text-center">{errors.submit}</p>
             )}
 
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
-              {isSubmitting ? '保存中...' : '保存并继续'}
+              {isSubmitting ? '保存中...' : '保存并开始访谈'}
             </button>
           </form>
         </div>
       </div>
-
-      {showModal && (
-        <OnboardingInviteModal
-          onAccept={() => navigate('/onboarding')}
-          onDecline={() => navigate('/dashboard')}
-        />
-      )}
     </div>
   );
 };
