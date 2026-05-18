@@ -126,10 +126,13 @@ public class AiService {
         AiMessage aiMessage = null;
 
         for (int loop = 0; loop < 5; loop++) {
+            // DeepSeek 不支持 tool_choice=required，只能用 auto
+            ToolChoice choice = ToolChoice.AUTO;
+
             ChatRequest request = ChatRequest.builder()
                     .messages(mutableMessages)
                     .toolSpecifications(toolSpecifications)
-                    .toolChoice(ToolChoice.AUTO)
+                    .toolChoice(choice)
                     .build();
 
             log.info("[AiService] chatWithTools - loop {} calling chatModel, {} messages, {} tools",

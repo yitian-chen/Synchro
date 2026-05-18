@@ -22,7 +22,6 @@ public class LangChain4jConfig {
     @Value("${ai.openai.base-url}")
     private String baseUrl;
 
-    // Embedding 独立配置（可对接不同供应商）
     @Value("${ai.embedding.model}")
     private String embeddingModel;
 
@@ -38,10 +37,8 @@ public class LangChain4jConfig {
                 .apiKey(apiKey)
                 .modelName(chatModel)
                 .baseUrl(baseUrl)
-                .temperature(0.1)
+                .temperature(0.5)
                 .timeout(java.time.Duration.ofSeconds(60))
-                .returnThinking(false)
-                .sendThinking(true)
                 .logRequests(true)
                 .logResponses(true)
                 .build();
@@ -53,10 +50,8 @@ public class LangChain4jConfig {
                 .apiKey(apiKey)
                 .modelName(chatModel)
                 .baseUrl(baseUrl)
-                .temperature(0.1)
+                .temperature(0.5)
                 .timeout(java.time.Duration.ofSeconds(60))
-                .returnThinking(false)
-                .sendThinking(true)
                 .build();
     }
 
