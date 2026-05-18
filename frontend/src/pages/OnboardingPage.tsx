@@ -11,7 +11,6 @@ const OnboardingPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [exchangeCount, setExchangeCount] = useState(0);
   const [redirectUrl, setRedirectUrl] = useState('/dashboard');
   const MAX_EXCHANGES = 8;
@@ -40,7 +39,6 @@ const OnboardingPage: React.FC = () => {
       setExchangeCount(response.exchangeCount);
       if (response.isComplete) {
         setIsComplete(true);
-        setShowCompleteModal(true);
         if (response.redirectUrl) setRedirectUrl(response.redirectUrl);
       }
     } catch (err) {
@@ -73,7 +71,6 @@ const OnboardingPage: React.FC = () => {
       setExchangeCount(response.exchangeCount);
       if (response.isComplete) {
         setIsComplete(true);
-        setShowCompleteModal(true);
         if (response.redirectUrl) setRedirectUrl(response.redirectUrl);
       }
     } catch (err) {
@@ -154,9 +151,14 @@ const OnboardingPage: React.FC = () => {
 
       {isComplete ? (
         <div className="p-4 bg-white border-t">
-          <p className="text-center text-green-600 font-semibold">
-            访谈已完成
-          </p>
+          <div className="max-w-2xl mx-auto">
+            <button
+              onClick={() => navigate(redirectUrl)}
+              className="btn-primary w-full py-3 rounded-xl text-base"
+            >
+              完成访谈，进入下一步
+            </button>
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSend} className="p-4 bg-white border-t">
@@ -178,29 +180,6 @@ const OnboardingPage: React.FC = () => {
             </button>
           </div>
         </form>
-      )}
-
-      {/* Completion Modal */}
-      {showCompleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 mx-4 max-w-sm w-full shadow-xl">
-            <div className="w-16 h-16 mx-auto rounded-full bg-accent flex items-center justify-center text-3xl mb-4">
-              ✨
-            </div>
-            <h2 className="text-xl font-bold text-center mb-2">访谈完成！</h2>
-            <p className="text-gray-500 text-center text-sm mb-6">
-              恭喜你完成了AI性格访谈！
-              <br />
-              你的个人资料已经完善，可以开始使用 Synchro 了。
-            </p>
-            <button
-              onClick={() => navigate(redirectUrl)}
-              className="btn-primary w-full py-3 rounded-xl text-base"
-            >
-              进入主页
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );
