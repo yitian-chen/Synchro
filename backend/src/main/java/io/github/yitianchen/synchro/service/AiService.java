@@ -115,17 +115,8 @@ public class AiService {
         return responseText;
     }
 
-    // ── New tool-calling chat ──
+    // ── Native tool calling (function calling via API) ──
 
-    /**
-     * Send a chat request with tool calling support. Runs a tool execution loop
-     * (max 5 iterations) until the model returns a plain text response.
-     *
-     * @param messages           structured conversation messages (System, User, Ai, ToolResult)
-     * @param toolSpecifications tool definitions from {@code ToolSpecifications.toolSpecificationsFrom()}
-     * @param tools              the tool instance for dispatching
-     * @return the final AiMessage (may contain text and/or unconsumed tool requests)
-     */
     public AiMessage chatWithTools(
             List<ChatMessage> messages,
             List<ToolSpecification> toolSpecifications,
@@ -163,10 +154,8 @@ public class AiService {
 
             log.info("[AiService] chatWithTools - {} tool execution requests", aiMessage.toolExecutionRequests().size());
 
-            // Append the AI message (with tool requests) to conversation
             mutableMessages.add(aiMessage);
 
-            // Execute each tool and append result messages
             for (ToolExecutionRequest toolRequest : aiMessage.toolExecutionRequests()) {
                 String result = executeToolCall(toolRequest, tools);
                 mutableMessages.add(ToolExecutionResultMessage.from(toolRequest, result));
@@ -177,9 +166,6 @@ public class AiService {
         return aiMessage;
     }
 
-    /**
-     * Build a structured message list from DB history for tool-calling chat.
-     */
     public List<ChatMessage> buildStructuredMessages(
             String systemPrompt,
             List<io.github.yitianchen.synchro.model.Message> dbMessages,

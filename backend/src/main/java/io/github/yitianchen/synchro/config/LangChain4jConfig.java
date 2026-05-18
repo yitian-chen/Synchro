@@ -38,7 +38,7 @@ public class LangChain4jConfig {
                 .apiKey(apiKey)
                 .modelName(chatModel)
                 .baseUrl(baseUrl)
-                .temperature(0.8)
+                .temperature(0.1)
                 .timeout(java.time.Duration.ofSeconds(60))
                 .logRequests(true)
                 .logResponses(true)
@@ -51,7 +51,7 @@ public class LangChain4jConfig {
                 .apiKey(apiKey)
                 .modelName(chatModel)
                 .baseUrl(baseUrl)
-                .temperature(0.8)
+                .temperature(0.1)
                 .timeout(java.time.Duration.ofSeconds(60))
                 .build();
     }
